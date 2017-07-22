@@ -1,0 +1,7 @@
+gitignore 
+.vscode
+build
+tags
+.editorconfig
+.DS_Store
+Testing
