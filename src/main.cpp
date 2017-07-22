@@ -9,15 +9,18 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
 
+#include "BehaviorPlanner.h"
+#include "Helpers.h"
+
 using namespace std;
 
 // for convenience
 using json = nlohmann::json;
 
-// For converting back and forth between radians and degrees.
-constexpr double pi() { return M_PI; }
-double deg2rad(double x) { return x * pi() / 180; }
-double rad2deg(double x) { return x * 180 / pi(); }
+// // For converting back and forth between radians and degrees.
+// constexpr double pi() { return M_PI; }
+// double deg2rad(double x) { return x * pi() / 180; }
+// double rad2deg(double x) { return x * 180 / pi(); }
 
 // Checks if the SocketIO event has JSON data.
 // If there is data the JSON object in string format will be returned,
@@ -131,34 +134,6 @@ vector<double> getFrenet(double x, double y, double theta, vector<double> maps_x
 
 }
 
-// Transform from Frenet s,d coordinates to Cartesian x,y
-vector<double> getXY(double s, double d, vector<double> maps_s, vector<double> maps_x, vector<double> maps_y)
-{
-	int prev_wp = -1;
-
-	while(s > maps_s[prev_wp+1] && (prev_wp < (int)(maps_s.size()-1) ))
-	{
-		prev_wp++;
-	}
-
-	int wp2 = (prev_wp+1)%maps_x.size();
-
-	double heading = atan2((maps_y[wp2]-maps_y[prev_wp]),(maps_x[wp2]-maps_x[prev_wp]));
-	// the x,y,s along the segment
-	double seg_s = (s-maps_s[prev_wp]);
-
-	double seg_x = maps_x[prev_wp]+seg_s*cos(heading);
-	double seg_y = maps_y[prev_wp]+seg_s*sin(heading);
-
-	double perp_heading = heading-pi()/2;
-
-	double x = seg_x + d*cos(perp_heading);
-	double y = seg_y + d*sin(perp_heading);
-
-	return {x,y};
-
-}
-
 int main() {
   uWS::Hub h;
 
@@ -216,12 +191,20 @@ int main() {
           // j[1] is the data JSON object
           
         	// Main car's localization Data
-          	double car_x = j[1]["x"];
+            double car_x = j[1]["x"];
           	double car_y = j[1]["y"];
           	double car_s = j[1]["s"];
           	double car_d = j[1]["d"];
           	double car_yaw = j[1]["yaw"];
           	double car_speed = j[1]["speed"];
+
+            CarState carState;
+            carState.x = car_x;
+            carState.y = car_y;
+            carState.s = car_s;
+            carState.d = car_d;
+            carState.yaw = car_yaw;
+            carState.speed = car_speed;
 
           	// Previous path data given to the Planner
           	auto previous_path_x = j[1]["previous_path_x"];
@@ -233,10 +216,15 @@ int main() {
           	// Sensor Fusion Data, a list of all other cars on the same side of the road.
           	auto sensor_fusion = j[1]["sensor_fusion"];
 
-          	json msgJson;
 
-          	vector<double> next_x_vals;
-          	vector<double> next_y_vals;
+            Map map;
+            map.waypoints_x = map_waypoints_x;
+            map.waypoints_y = map_waypoints_y;
+            map.waypoints_s = map_waypoints_s;
+            map.waypoints_dx = map_waypoints_dx;
+            map.waypoints_dy = map_waypoints_dy;
+
+          	json msgJson;
 
             // TODO: Define Behavior Planner
             // pass in map, route, and predictions
@@ -244,13 +232,14 @@ int main() {
             // maneuvers must be feasible, safe, legal, and efficient
             // Not responsible for execution details and collision avoidance
 
-            // TODO: Define Trajectory Generator ?
-            
+            BehaviorPlanner behaviourPlanner;
+
+            auto trajectory = behaviourPlanner.GenerateTrajectory(map, carState);
 
 
           	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
-          	msgJson["next_x"] = next_x_vals;
-          	msgJson["next_y"] = next_y_vals;
+          	msgJson["next_x"] = trajectory.next_x_vals;
+          	msgJson["next_y"] = trajectory.next_y_vals;
 
           	auto msg = "42[\"control\","+ msgJson.dump()+"]";
 
