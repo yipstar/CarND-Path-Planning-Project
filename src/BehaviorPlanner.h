@@ -14,6 +14,8 @@ struct CarState {
   double d;
   double yaw;
   double speed;
+  vector<double> previous_path_x;
+  vector<double> previous_path_y;
 };
 
 struct Map {

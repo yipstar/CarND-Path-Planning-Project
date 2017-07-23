@@ -3,3 +3,5 @@ Oh, I just added 6 time the d_value as they suggested. Such as: map_waypoints_x[
 I'm just starting out, and i'm trying to get the car drive on a straight line with just incrementing s and keeping d constant (middle lane). And then converting these back to x, y and using spline to generate a trajectory. Because of the way the getXY function is written, (simple linear interpolation), it's causing the car to jerk everytime it reaches a waypoint. How are you guys writing the keep lane trajectory generation?
 
 use splines to fit your waypoints
+
+. Something to think about going forward is how we can minimize total acceleration and jerk, by gradually increasing and decreasing point path spacing based on the car_speed variable.
