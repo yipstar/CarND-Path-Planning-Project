@@ -9,8 +9,10 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
 
-#include "BehaviorPlanner.h"
 #include "Helpers.h"
+#include "BehaviorPlanner.h"
+#include "TrajectoryGenerator.h"
+#include "KeepVelocityTrajectory.h"
 
 using namespace std;
 
@@ -37,101 +39,95 @@ string hasData(string s) {
   return "";
 }
 
-double distance(double x1, double y1, double x2, double y2)
-{
-	return sqrt((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1));
-}
-int ClosestWaypoint(double x, double y, vector<double> maps_x, vector<double> maps_y)
-{
+void debug_cycle(CarState &car_state, CarState previous_car_state) {
+  cout << "DEBUG ------" << endl;
 
-	double closestLen = 100000; //large number
-	int closestWaypoint = 0;
+  if (car_state.speed == 0) {
+    cout << "Inital Frame, speed == 0, car_state.s: " << car_state.s << endl;
 
-	for(int i = 0; i < maps_x.size(); i++)
-	{
-		double map_x = maps_x[i];
-		double map_y = maps_y[i];
-		double dist = distance(x,y,map_x,map_y);
-		if(dist < closestLen)
-		{
-			closestLen = dist;
-			closestWaypoint = i;
-		}
+    return;
+  }
 
-	}
+  cout << "previous_path_x: " << endl;
+  for (int i=0; i < car_state.previous_path_x.size(); i++) {
+    cout << car_state.previous_path_x[i] << ", ";
+  }
+  cout << endl;
 
-	return closestWaypoint;
+  // cout << "previous_trajectory_x: " << endl;
+  // for (int i=0; i < car_state.previous_trajectory.next_x_vals.size(); i++) {
+  //   cout << car_state.previous_trajectory.next_x_vals[i] << ", ";
+  // }
+  // cout << endl;
 
-}
 
-int NextWaypoint(double x, double y, double theta, vector<double> maps_x, vector<double> maps_y)
-{
+  // cout << "previous_trajectory_s: " << endl;
+  // for (int i=0; i < car_state.previous_trajectory.next_s_vals.size(); i++) {
+  //   cout << car_state.previous_trajectory.next_s_vals[i] << ", ";
+  // }
+  // cout << endl;
 
-	int closestWaypoint = ClosestWaypoint(x,y,maps_x,maps_y);
+  int previous_trajectory_size = car_state.previous_trajectory.next_x_vals.size();
+  // cout << "previous_trajectory_size: " << previous_trajectory_size << endl;
 
-	double map_x = maps_x[closestWaypoint];
-	double map_y = maps_y[closestWaypoint];
+  int previous_path_x_size = car_state.previous_path_x.size();
+  // cout << "previous_path_x_size: " << previous_path_x_size << endl;
 
-	double heading = atan2( (map_y-y),(map_x-x) );
+  int num_points_traveled = previous_trajectory_size - previous_path_x_size;
 
-	double angle = abs(theta-heading);
+  // cout << "num_points_traveled: " << num_points_traveled << endl;
 
-	if(angle > pi()/4)
-	{
-		closestWaypoint++;
-	}
+  vector<double> points_traveled_s = previous_car_state.points_traveled_s;
 
-	return closestWaypoint;
+  for (int i=0; i < num_points_traveled; i++) {
+    points_traveled_s.push_back(car_state.previous_trajectory.next_s_vals[i]);
+  }
 
-}
+  if (num_points_traveled == 0) {
+    if (points_traveled_s[points_traveled_s.size() - 1] != car_state.s) {
+      // cout << "--------- Last traveled point is not equal to current s" << endl;
+      points_traveled_s.push_back(car_state.s);
+    }
+  }
 
-// Transform from Cartesian x,y coordinates to Frenet s,d coordinates
-vector<double> getFrenet(double x, double y, double theta, vector<double> maps_x, vector<double> maps_y)
-{
-	int next_wp = NextWaypoint(x,y, theta, maps_x,maps_y);
+  // prune points_traveled_s to last 3 points (all we need for calculations)
+  int num_points_traveled_total = points_traveled_s.size();
+  vector<double> points_traveled_s_pruned;
 
-	int prev_wp;
-	prev_wp = next_wp-1;
-	if(next_wp == 0)
-	{
-		prev_wp  = maps_x.size()-1;
-	}
+  if (num_points_traveled_total >= 3) {
+    // cout << "pruning points_traveled_s: " << num_points_traveled_total << endl;
 
-	double n_x = maps_x[next_wp]-maps_x[prev_wp];
-	double n_y = maps_y[next_wp]-maps_y[prev_wp];
-	double x_x = x - maps_x[prev_wp];
-	double x_y = y - maps_y[prev_wp];
+    points_traveled_s_pruned.push_back(points_traveled_s[num_points_traveled_total - 3]);
+    points_traveled_s_pruned.push_back(points_traveled_s[num_points_traveled_total - 2]);
+    points_traveled_s_pruned.push_back(points_traveled_s[num_points_traveled_total - 1]);
 
-	// find the projection of x onto n
-	double proj_norm = (x_x*n_x+x_y*n_y)/(n_x*n_x+n_y*n_y);
-	double proj_x = proj_norm*n_x;
-	double proj_y = proj_norm*n_y;
+    car_state.points_traveled_s = points_traveled_s_pruned;
+  } else {
+    car_state.points_traveled_s = points_traveled_s;
+  }
 
-	double frenet_d = distance(x_x,x_y,proj_x,proj_y);
+  // cout << "points traveled: ";
+  // for (int i=0; i < car_state.points_traveled_s.size(); i++) {
+  //   cout << car_state.points_traveled_s[i] << ", ";
+  // }
+  // cout << endl;
 
-	//see if d value is positive or negative by comparing it to a center point
+  // cout << "previous s: " << previous_car_state.s << endl;
+  // cout << "current s: " << car_state.s << endl;
 
-	double center_x = 1000-maps_x[prev_wp];
-	double center_y = 2000-maps_y[prev_wp];
-	double centerToPos = distance(center_x,center_y,x_x,x_y);
-	double centerToRef = distance(center_x,center_y,proj_x,proj_y);
+  double distance_traveled = car_state.s - previous_car_state.s;
 
-	if(centerToPos <= centerToRef)
-	{
-		frenet_d *= -1;
-	}
+  // cout << "distance_traveled: " << distance_traveled << " m" << endl;
 
-	// calculate s value
-	double frenet_s = 0;
-	for(int i = 0; i < prev_wp; i++)
-	{
-		frenet_s += distance(maps_x[i],maps_y[i],maps_x[i+1],maps_y[i+1]);
-	}
+  // cout << "previous car_speed: " << previous_car_state.speed << " mph" << endl;
+  // cout << "current car_speed: " << car_state.speed << " mph" << endl;
 
-	frenet_s += distance(0,0,proj_x,proj_y);
+  //TODO: special bookkeeping for when points traveled = 0, seems simulator moves a point anyway
 
-	return {frenet_s,frenet_d};
+  // calculate speed m/s
+  double calculated_speed = (car_state.s - previous_car_state.s) / (0.02 * num_points_traveled);
 
+  // cout << "calculated_speed: " << calculated_speed << " m/s" << endl;
 }
 
 int main() {
@@ -148,6 +144,9 @@ int main() {
   string map_file_ = "../data/highway_map.csv";
   // The max s value before wrapping around the track back to 0
   double max_s = 6945.554;
+
+  CarState previous_car_state = CarState();
+  Trajectory previous_trajectory = Trajectory();
 
   ifstream in_map_(map_file_.c_str(), ifstream::in);
 
@@ -171,7 +170,11 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
 
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  Map map = Map(map_waypoints_x, map_waypoints_y, map_waypoints_s, map_waypoints_dx, map_waypoints_dy);
+
+  BehaviorPlanner behavior_planner = BehaviorPlanner(map);
+
+  h.onMessage([&previous_trajectory, &previous_car_state, &behavior_planner, &map](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -199,58 +202,62 @@ int main() {
           	double car_yaw = j[1]["yaw"];
           	double car_speed = j[1]["speed"];
 
-            CarState carState;
-            carState.x = car_x;
-            carState.y = car_y;
-            carState.s = car_s;
-            carState.d = car_d;
-            carState.yaw = car_yaw;
-            carState.speed = car_speed;
+            CarState car_state;
+            car_state.x = car_x;
+            car_state.y = car_y;
+            car_state.s = car_s;
+            car_state.d = car_d;
+            car_state.yaw = car_yaw;
+            car_state.speed = car_speed;
 
           	// Previous path data given to the Planner
             vector<double> previous_path_x = j[1]["previous_path_x"];
             vector<double> previous_path_y = j[1]["previous_path_y"];
 
+            car_state.previous_path_x = previous_path_x;
+            car_state.previous_path_y = previous_path_y;
+            car_state.previous_trajectory = previous_trajectory;
+
           	// Previous path's end s and d values
           	double end_path_s = j[1]["end_path_s"];
           	double end_path_d = j[1]["end_path_d"];
 
-            carState.previous_path_x = previous_path_x;
-            carState.previous_path_y = previous_path_y;
-
           	// Sensor Fusion Data, a list of all other cars on the same side of the road.
           	auto sensor_fusion = j[1]["sensor_fusion"];
-
-
-            Map map;
-            map.waypoints_x = map_waypoints_x;
-            map.waypoints_y = map_waypoints_y;
-            map.waypoints_s = map_waypoints_s;
-            map.waypoints_dx = map_waypoints_dx;
-            map.waypoints_dy = map_waypoints_dy;
+            // cout << "sensor_fusion: " << sensor_fusion << endl;
 
           	json msgJson;
 
-            // TODO: Define Behavior Planner
-            // pass in map, route, and predictions
-            // output suggested maeuver
-            // maneuvers must be feasible, safe, legal, and efficient
-            // Not responsible for execution details and collision avoidance
+            debug_cycle(car_state, previous_car_state);
 
-            BehaviorPlanner behaviourPlanner;
-
-            auto trajectory = behaviourPlanner.GenerateTrajectory(map, carState);
+            auto suggested_maneuver = behavior_planner.update_state(car_state);
+            cout << "suggested_maneuver: " << suggested_maneuver << endl;
 
 
-          	// TODO: define a path made up of (x,y) points that the car will visit sequentially every .02 seconds
-          	msgJson["next_x"] = trajectory.next_x_vals;
-          	msgJson["next_y"] = trajectory.next_y_vals;
+            if (previous_path_x.size() < 10) {
+              cout << "less than 8 points left, generate new trajectory" << endl;
+
+              TrajectoryGenerator trajectoryGenerator;
+              auto trajectory = trajectoryGenerator.StayInLane(map, car_state);
+              previous_trajectory = trajectory;
+              auto previous_s_vals = previous_trajectory.next_s_vals;
+
+              msgJson["next_x"] = trajectory.next_x_vals;
+              msgJson["next_y"] = trajectory.next_y_vals;
+
+            } else {
+              cout << "use previous path" << endl;
+
+              msgJson["next_x"] = previous_path_x;
+              msgJson["next_y"] = previous_path_y;
+            }
+
+            previous_car_state = car_state;
 
           	auto msg = "42[\"control\","+ msgJson.dump()+"]";
 
           	//this_thread::sleep_for(chrono::milliseconds(1000));
           	ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
-          
         }
       } else {
         // Manual driving
@@ -293,83 +300,3 @@ int main() {
   }
   h.run();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

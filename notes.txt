@@ -5,3 +5,169 @@ I'm just starting out, and i'm trying to get the car drive on a straight line wi
 use splines to fit your waypoints
 
 . Something to think about going forward is how we can minimize total acceleration and jerk, by gradually increasing and decreasing point path spacing based on the car_speed variable.
+
+
+Each way point has an (x,y) global map position, and frenet s value and frenet d unit normal vector ( split up into the x component, and the y component. The s value is the distance along the direction of the road, the first way point has an s value of 0 because its the starting point. The d vector has a magnitude of 1 and points perpendicular to the road in the direction of the right hand side of the road. The d vector can be used to reference lane positions, for instance if you want to be in the middle lane at some way point just add the way points (x,y) with the d vector multiplied by 6 = (2+4), since each lane is 4 m. 
+
+This means add 4 to go to lane 3 and subtract 4 to go to lane 1.
+
+TODO:
+- sampling based polynomial trajectory generation
+
+start config: current car config (localization and sensors) carSTate
+goal configuration: from behavior where to go at which speed
+incorporate predictions to take other cars into account, and our actions
+ effecting other cars.
+
+constraints - dynamics
+
+feasible motion dynamics
+
+minimze cost function
+
+sampling based methods
+Collision Detection module
+
+Frenet reminder
+road structure as reference path
+
+don't just compute sequence of configuration but also WHEN (the need for time)
+
+need s, d, AND t.
+same with x/y
+
+Seperate planning we do in the s dimension, from the planning we do in the d dimension.
+
+reason about 2 2d pictures, one for s and one for d.
+
+boundary conditions
+jerk minization
+polynomial tratjectories (spline ?)
+
+trajectory generation algorithm (select best trajectory)
+
+change lanes 10 seconds later (goal conditon, start condition)
+these are the boundary conditions
+
+Motion Control Module
+position continuity
+velocity continuity (speed)
+accelartion continuty and jerk contunity
+
+accelertion
+
+jerk quantity as uncomfortable this needs to be mimized.
+easy to do jerk min in 1D.
+
+total squared jerk mimize this. 6 or more time steps need to mimizied jerk
+see: Jerk Minimizing Trajectories
+6 coefficents -> 6 tunable parameters -> 6 boundary conditions
+
+s(t)
+
+s_t0 -> s_tfinal
+
+jerk 3rd derivative of position
+
+total squared jerk
+
+generate trajectory
+
+initial s0 = 0
+
+Sim start:
+s = 124
+
+6 boundary conditions (constraints)
+longitudinal displacement
+[inital_position, initial_velocity, initial_acceleration, final_position, final_velocity, final_acceleration]
+
+same for lateral displacement
+[inital_position, initial_velocity, initial_acceleration, final_position, final_velocity, final_acceleration]
+
+Lane Change
+
+
+d inital and final velocities and acceleration are 0
+[0, 0, 0, 10, 0, 0]
+
+x axis is time and y axis is d
+
+quintic polynomial how to find the coeffecients
+
+choose t=0
+
+
+
+Implement Polynomial Solver (s)
+inputs: [s0_pos, s0_vel, s0_acc], [sf_pos, sf_vel, sf_acc], T
+outputs: 6 coefficients that uniquely describe the longitudinal (s) trajectory
+
+(d)
+inputs: [d0_pod, d0_vel, d0_acc], [df_pod, df_vel, df_acc], T
+outputs: 6 coefficients that uniquely describe the lateral (s) trajectory
+
+
+
+
+feasibility loop through trajectory and check tests
+
+
+Hi, the s_double_dot ist the accelaration in frenet s coordinate
+so the difference between two points s1 and s2 is the s_dot which is the velocity in frenet s coordinate
+the result (s1 -s2) - (s2 -s3) is the s_double_dot
+so you need the last two points to calculate the current s_double_do
+
+
+===================
+Let me share my "pain" , that may help other from doing the same mistake.
+
+*My mistake:* I was *measuring* acceleration (timing from update to update) and doing du/dt. But that was a *grave* error.
+What I was calculating was the average acceleration. So my acceleration at the end was bigger and incompatible with my new segment.
+
+Changed that , to a simple "3 points rule" from the previous curve, and everything is fine! (except my head which is exploding from my silly mistake) :slightly_smiling_face:
+
+Ofcourse you can play it "safe" and chain paths, have zero acceleration at the end points and let the jmt do the job for you, BUT that means if there is an incident and you have to change your path earlier, you are screwed
+
+
+=====================
+To avoid discontinuities, I had to calculate the start distance, speed, and acceleration using current JMT before re-calculating the new JMT for the next update. The end values (excluding considerations for any collision avoidance) will be the start position (s) + an estimate of the distance covered during the update, the max velocity, and 0 acceleration. You can then permute over a sub-range of final s and velocity values and exclude JMTs that violate the speed limit, acceleration limits, and jerk limits. (edited)
+
+======
+
+Ah, and the velocity and acceleration that the sim is judging by are what Kostas writes below - v is based on previous points, and a is based on the previous 3 points
+
+======
+
+I did not use the speed or s from the simulator. I found those to be deceiving in terms of using them as the true instantaneous velocity and distance - they seemed to not line up with the my predicted values based on the number of points the simulator had consumed; they appear to be approximations or averages over time, not an instantaneous value. Remember that the simulator 'teleports' the car given the points you provided so you should have perfect knowledge of where the car is and what its instantaneous speed is at all times with the JMT equations. I'm using the remaining points from the previous update instead to determine exactly where the car is and its velocity based on my previous JMT
+
+
+======
+
+Jose Rojas [22 hours ago] 
+I'm using a JMT to generate a function s(t) -> so the domain would be time to generate the 's' distance along the road. I then map the 's' points generated by this function with uniform time step to x and y using a spline interpolation. I may need to re-evaluate some of this because I do see some cases where the speed limits are surpassed - I believe this might be caused by not considering the 2d forces (tangential, normal) in the x,y coordinate space by only considering the motion as 1 dimensional along d. But this should get you most of the way there - I see these edge cases at specific places along the road (about 3-4 times through the track).
+
+=====
+
+Yes, this works. You can calculate distance, speed, acceleration using your previous JMT to calculate the starting parameters for the next JMT update.
+
+====
+
+Kostas Oreopoulos [1:29 PM] 
+In case some else was struggling, The naive solution is always the best. To deal with the car speeding because s is linear and the car is in curves, the following seems to work pretty well.
+* once you have your splines and you can convert from s,d to xy in continuous fashion, then do the following
+* take for example from the point you are a distance of 100 meters (the next) and divide it in 4-5-6 points you want.
+Then for those all those points calculate the XY coodinates and add the distances  (1-2, 2-3.. etc) . You will get a distance Dxy.
+If its a straight line you are driving, then Ds (which is just the difference of the first and last points) should be equal to Dxy.
+Dxy > Ds, means you are turning, thus travelling a bigger distance. So the speed you said you liked... Dv, which was Ds/dt will in fact to Dxy/dt.
+So to compensate you should tell the vehicle to scale down the velocity by that factor (Ds / Dxy) OR , you can apply that directy to the distance you tell it to travel (more accurate )
+
+
+sensor_fusion:
+ [ id, x, y, vx, vy, s, d]
+
+[[0,915.2576,1132.84,21.04151,0.1510535,130.647,2.04525],[1,1108.025,1181.13,15.9365,2.422745,331.3928,5.457354],[2,885.5003,1128.804,13.37166,-0.0386542,100.9089,6.000782],[3,868.8564,1132.843,23.44067,-0.09241272,84.26991,1.985798],[4,1098.41,1175.352,15.75051,3.590922,320.0074,9.316438],[5,897.6356,1128.785,21.88129,0.004136397,113.0441,6.016078],[6,762.1,1421.6,0,0,6711.778,-268.0964],[7,762.1,1425.2,0,0,6709.296,-270.7039],[8,762.1,1429,0,0,6663.543,-273.1828],[9,762.1,1432.9,0,0,6660.444,-275.5511],[10,762.1,1436.3,0,0,6657.743,-277.6157],[11,762.1,1441.7,0,0,6653.453,-280.8947]]
+
+
+TODO: for jerk
+https://discussions.udacity.com/t/latency-handling/322156/6

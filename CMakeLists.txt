@@ -11,7 +11,13 @@ set(sources
   src/main.cpp
   src/BehaviorPlanner.cpp
   src/Helpers.cpp
+  src/Map.cpp
+  src/spline.h
+  src/TrajectoryGenerator.cpp
+  src/KeepVelocityTrajectory.cpp
   )
+
+include_directories(src/Eigen-3.3)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 
