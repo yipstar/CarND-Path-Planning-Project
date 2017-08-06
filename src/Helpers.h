@@ -25,13 +25,16 @@ struct CarState {
   double d;
   double yaw;
   double speed;
+
   vector<double> previous_path_x;
   vector<double> previous_path_y;
+
   Trajectory previous_trajectory;
 
   vector<double>points_traveled_s;
 
-  int previous_points_traveled;
+  int previous_points_traveled = 0;
+  int total_points_traveled = 0;
 };
 
 struct CostMap {

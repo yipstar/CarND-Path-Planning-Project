@@ -10,72 +10,56 @@ using namespace std;
 KeepVelocityTrajectory::KeepVelocityTrajectory() {}
 KeepVelocityTrajectory::~KeepVelocityTrajectory() {}
 
-Trajectory KeepVelocityTrajectory::Generate(Map map, CarState car_state) {
+void KeepVelocityTrajectory::generate_new_path(Trajectory &trajectory, double s0, double d, double s0_dot, double s0_double_dot, Map map, int keep_path_amount) {
 
-  // cout << "carState.speed: " << carState.speed << endl;
-  // cout << "carState.s: " << carState.s << endl;
-  // cout << "carState.d: " << carState.d << endl;
+  cout << "keep_path_amount: " << keep_path_amount << endl;
 
-  double s0 = car_state.s;
-  cout << "s0: " << s0 << endl;
+  auto next_x_vals = trajectory.next_x_vals;
+  auto next_y_vals = trajectory.next_y_vals;
 
-  int num_points_traveled = car_state.points_traveled_s.size();
-  // cout << "num_points_traveled: " << num_points_traveled << endl;
+  auto next_s_vals = trajectory.next_s_vals;
+  auto next_d_vals = trajectory.next_d_vals;
 
-  double s_m1 = car_state.points_traveled_s[num_points_traveled - 2];
-  cout << "s_m1: " << s_m1 << endl;
+  double sf;
+  double sf_dot;
+  double sf_double_dot;
 
-  double s_m2 = car_state.points_traveled_s[num_points_traveled - 3];
-  cout << "s_m2: " << s_m2 << endl;
+  int T;
 
-  // current velocity
-  double s0_dot = (s0 - s_m1) / 0.02;
-  cout << "s0_dot: " << s0_dot << endl;
+  int num_steps;
 
-  // previous step velocity
-  double s_m1_dot = (s_m1 - s_m2) / 0.02;
-  cout << "s_m1_dot: " << s_m1_dot << endl;
+  if (keep_path_amount == 0) {
 
-  // current acceleration
-  double s0_double_dot = s0_dot - s_m1_dot;
-  cout << "s0_double_dot: " << s0_double_dot << endl;
+    T = 10;
+    sf_dot = 17.8816; // 40 mph in m/s
+    sf = s0 + sf_dot * 7; // T - 3 timesteps to roughly account for velocity integral
+    sf_double_dot = 0;
+    num_steps = 501;
 
-  // continuity is important
+  } else {
 
-  Trajectory trajectory;
-
-  vector<double> next_x_vals;
-  vector<double> next_y_vals;
-
-  vector<double> next_s_vals;
-  vector<double> next_d_vals;
+    T = 1;
+    sf_dot = 17.8816; // 40 mph in m/s
+    sf = s0 + sf_dot * T;
+    sf_double_dot = 0;
+    num_steps = 51;
+  }
 
   vector<double> start;
   vector<double> end;
 
-  // Move ahead 220.352 meters in 10 seconds
-  // keeps 50 mph velocity
+  cout << "start: {" << s0 << ", " << s0_dot << ", " << s0_double_dot << "}" << endl;
 
-  double T = 10;
-
-  // Target velocity 50 mph = 22.352 meters/s
-  double sf_dot = 20;
-
-  // end state is vecolity * T meters ahead
-  double sf = s0 + sf_dot * T;
-
-  // Target acceleration is 0 as we want to be steady
-  double sf_double_dot = 0;
+  cout << "end: {" << sf << ", " << sf_dot << ", " << sf_double_dot << "}" << endl;
 
   start = {s0, s0_dot, s0_double_dot};
   end = {sf, sf_dot, sf_double_dot};
 
-  double d = car_state.d;
-
   auto jmt = JMT(start, end, T);
 
-  // Generate 50 time steps
-  for(int i = 1; i < 51; i++) {
+  // Generate time steps
+
+  for(int i = 1; i < num_steps - keep_path_amount; i++) {
 
     double t = i * .02;
     cout << "t: " << t;
@@ -88,25 +72,25 @@ Trajectory KeepVelocityTrajectory::Generate(Map map, CarState car_state) {
     next_s_vals.push_back(next_s);
     next_d_vals.push_back(d);
 
-    vector<double> xy = getXY(next_s, d, map.waypoints_s, map.waypoints_x, map.waypoints_y);
+    vector<double> xy = map.getXY_spline(next_s, d);
 
     next_x_vals.push_back(xy[0]);
     next_y_vals.push_back(xy[1]);
   }
 
-  // check trajectory
-  for (int i = 0; i < next_s_vals.size(); i++) {
-    double s1 = next_s_vals[i];
-    double s1_dot = (s1 - s0) / 0.02;
-    double s1_double_dot = s1_dot - s0_dot;
+  // // check trajectory
+  // for (int i = 0; i < next_s_vals.size(); i++) {
+  //   double s1 = next_s_vals[i];
+  //   double s1_dot = (s1 - s0) / 0.02;
+  //   double s1_double_dot = s1_dot - s0_dot;
 
-    if (s1_dot > 26.8224) {
-      cout << "------------- MAX Velocity reached, i: " << i << " s1_dot: " << s1_dot << endl;
-    }
+  //   if (s1_dot > 26.8224) {
+  //     cout << "------------- MAX Velocity reached, i: " << i << " s1_dot: " << s1_dot << endl;
+  //   }
 
-    s0 = s1;
-    s0_dot = s1_dot;
-  }
+  //   s0 = s1;
+  //   s0_dot = s1_dot;
+  // }
 
   trajectory.next_x_vals = next_x_vals;
   trajectory.next_y_vals = next_y_vals;
@@ -114,5 +98,7 @@ Trajectory KeepVelocityTrajectory::Generate(Map map, CarState car_state) {
   trajectory.next_s_vals = next_s_vals;
   trajectory.next_d_vals = next_d_vals;
 
-  return trajectory;
+  cout << "trajectory.next_x_vals.size: " << next_x_vals.size() << endl;
+  cout << "trajectory.next_s_vals.size: " << next_s_vals.size() << endl;
+  cout << "trajectory.next_d_vals.size: " << next_d_vals.size() << endl;
 }

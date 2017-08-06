@@ -14,7 +14,9 @@ set(sources
   src/Map.cpp
   src/spline.h
   src/TrajectoryGenerator.cpp
+  src/AbstractTrajectory.cpp
   src/KeepVelocityTrajectory.cpp
+  src/ConstantVelocityTrajectory.cpp
   )
 
 include_directories(src/Eigen-3.3)
