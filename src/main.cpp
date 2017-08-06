@@ -10,13 +10,18 @@
 #include "json.hpp"
 
 #include "Helpers.h"
+#include "Prediction.h"
+
 #include "BehaviorPlanner.h"
+
 #include "TrajectoryGenerator.h"
 #include "AbstractTrajectory.h"
 #include "KeepVelocityTrajectory.h"
 #include "ConstantVelocityTrajectory.h"
 
 using namespace std;
+
+const bool DEBUG = true;
 
 // for convenience
 using json = nlohmann::json;
@@ -178,6 +183,8 @@ int main() {
 
   Map map = Map(map_waypoints_x, map_waypoints_y, map_waypoints_s, map_waypoints_dx, map_waypoints_dy);
 
+  Prediction prediction = Prediction(map);
+
   BehaviorPlanner behavior_planner = BehaviorPlanner(map);
 
   int total_points_traveled = 0;
@@ -188,7 +195,7 @@ int main() {
 
   int path_size;
 
-  h.onMessage([&previous_trajectory, &previous_car_state, &behavior_planner, &map, &total_points_traveled, &behavior_cycle_counter, &suggested_maneuver, &path_size](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&previous_trajectory, &previous_car_state, &prediction, &behavior_planner, &map, &total_points_traveled, &behavior_cycle_counter, &suggested_maneuver, &path_size](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -216,7 +223,7 @@ int main() {
           	double car_yaw = j[1]["yaw"];
           	double car_speed = j[1]["speed"];
 
-            cout << "DEBUG ------" << endl;
+            cout << "DEBUG Loop Start ------" << endl;
 
             CarState car_state;
             car_state.x = car_x;
@@ -250,7 +257,7 @@ int main() {
 
             if (previous_path_x.size() > 0) {
               int num_points_traveled = path_size - previous_path_x.size();
-              cout << "num_points_traveled: " << num_points_traveled << endl;
+
 
               // int trajectory_traveled = previous_trajectory.next_x_vals.size() - previous_path_x.size();
 
@@ -274,9 +281,11 @@ int main() {
               total_points_traveled += num_points_traveled;
               behavior_cycle_counter += num_points_traveled;
 
-              cout << "total_points_traveled: " << total_points_traveled << endl;
-
-              cout << "behavior_cycle_counter: " << total_points_traveled << endl;
+              if (DEBUG) {
+                cout << "num_points_traveled: " << num_points_traveled << endl;
+                cout << "total_points_traveled: " << total_points_traveled << endl;
+                cout << "behavior_cycle_counter: " << total_points_traveled << endl;
+              }
             }
 
             car_state.previous_path_x = previous_path_x;
@@ -289,7 +298,7 @@ int main() {
 
           	// Sensor Fusion Data, a list of all other cars on the same side of the road.
           	auto sensor_fusion = j[1]["sensor_fusion"];
-            // cout << "sensor_fusion: " << sensor_fusion << endl;
+            auto predictions = prediction.get_predictions(sensor_fusion);
 
           	json msgJson;
 
@@ -306,14 +315,14 @@ int main() {
 
             // This means Trajectory Generation occurs roughly every .8 seconds
             if (previous_path_x.size() <= 50) {
-            //   cout << "less than 10 points left, generate new trajectory" << endl;
+                cout << "less than 10 points left, generate new trajectory" << endl;
 
-            // TrajectoryGenerator trajectoryGenerator;
-            //   auto trajectory = trajectoryGenerator.StayInLane2(map, car_state);
-            ConstantVelocityTrajectory generator;
-            // KeepVelocityTrajectory generator;
+              // TrajectoryGenerator trajectoryGenerator;
+              //   auto trajectory = trajectoryGenerator.StayInLane2(map, car_state);
+              // ConstantVelocityTrajectory generator;
+              KeepVelocityTrajectory generator;
 
-            cout << "generating new trajectory" << endl;
+              cout << "generating new trajectory" << endl;
 
               auto trajectory = generator.Generate(map, car_state);
 

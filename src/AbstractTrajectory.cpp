@@ -27,17 +27,18 @@ Trajectory AbstractTrajectory::Generate(Map map, CarState car_state) {
   auto previous_d_vals = previous_trajectory.next_d_vals;
 
   int previous_path_size = car_state.previous_path_x.size();
-  cout <<  "previous_path_size: " << previous_path_size << endl;
-
   int num_points_traveled = car_state.previous_trajectory.next_x_vals.size() - previous_path_size;
 
-  cout << "num_points_traveled: " << num_points_traveled << endl;
+  if (DEBUG) {
+    cout <<  "previous_path_size: " << previous_path_size << endl;
+    cout << "num_points_traveled: " << num_points_traveled << endl;
 
-  cout << "previous_s_vals: ";
-  for (int i=0; i < previous_s_vals.size(); i++) {
-    cout << previous_s_vals[i] << ", ";
+    cout << "previous_s_vals: ";
+    for (int i=0; i < previous_s_vals.size(); i++) {
+      cout << previous_s_vals[i] << ", ";
+    }
+    cout << endl;
   }
-  cout << endl;
 
   double s;
   double d;
@@ -46,7 +47,9 @@ Trajectory AbstractTrajectory::Generate(Map map, CarState car_state) {
 
   if (previous_path_size == 0) {
 
-    cout << "generate entire new path, don't append" << endl;
+    if (DEBUG) {
+      cout << "generate entire new path, don't append" << endl;
+    }
 
     s = car_state.s;
     d = car_state.d;
@@ -56,7 +59,9 @@ Trajectory AbstractTrajectory::Generate(Map map, CarState car_state) {
 
   } else {
 
-    cout << "append path" << endl;
+    if (DEBUG) {
+      cout << "append path" << endl;
+    }
 
     // keep_path_amount = 0;
 
@@ -80,33 +85,38 @@ Trajectory AbstractTrajectory::Generate(Map map, CarState car_state) {
     double s_m1 = previous_s_vals[start_index - 1];
     double s_m2 = previous_s_vals[start_index - 2];
 
-    cout << "s: " << s0 << endl;
-    cout << "d: " << d << endl;
-
     // current velocity
     s_dot = (s0 - s_m1) / 0.02;
-    cout << "s_dot: " << s_dot << endl;
 
     // previous step velocity
     double s_m1_dot = (s_m1 - s_m2) / 0.02;
-    cout << "s_m1_dot: " << s_m1_dot << endl;
 
     // current acceleration
     s_double_dot = s_dot - s_m1_dot;
-    cout << "s_double_dot: " << s_double_dot << endl;
+
+    if (DEBUG) {
+      cout << "s: " << s0 << endl;
+      cout << "d: " << d << endl;
+      cout << "s_dot: " << s_dot << endl;
+      cout << "s_m1_dot: " << s_m1_dot << endl;
+      cout << "s_double_dot: " << s_double_dot << endl;
+    }
+
   }
 
-  cout << "kept previous path next_s_vals: ";
-  for(int i = 0; i < next_s_vals.size(); i++) {
-    cout << next_s_vals[i] << ", ";
-  }
-  cout << endl;
+  if (DEBUG) {
+    cout << "kept previous path next_s_vals: ";
+    for(int i = 0; i < next_s_vals.size(); i++) {
+      cout << next_s_vals[i] << ", ";
+    }
+    cout << endl;
 
-  cout << "kept previous path next_d_vals: ";
-  for(int i = 0; i < next_d_vals.size(); i++) {
-    cout << next_d_vals[i] << ", ";
+    cout << "kept previous path next_d_vals: ";
+    for(int i = 0; i < next_d_vals.size(); i++) {
+      cout << next_d_vals[i] << ", ";
+    }
+    cout << endl;
   }
-  cout << endl;
 
   trajectory.next_x_vals = next_x_vals;
   trajectory.next_y_vals = next_y_vals;

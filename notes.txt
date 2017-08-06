@@ -1,16 +1,3 @@
-Oh, I just added 6 time the d_value as they suggested. Such as: map_waypoints_x[i]+ 6*map_waypoints_dx[i]
-
-I'm just starting out, and i'm trying to get the car drive on a straight line with just incrementing s and keeping d constant (middle lane). And then converting these back to x, y and using spline to generate a trajectory. Because of the way the getXY function is written, (simple linear interpolation), it's causing the car to jerk everytime it reaches a waypoint. How are you guys writing the keep lane trajectory generation?
-
-use splines to fit your waypoints
-
-. Something to think about going forward is how we can minimize total acceleration and jerk, by gradually increasing and decreasing point path spacing based on the car_speed variable.
-
-
-Each way point has an (x,y) global map position, and frenet s value and frenet d unit normal vector ( split up into the x component, and the y component. The s value is the distance along the direction of the road, the first way point has an s value of 0 because its the starting point. The d vector has a magnitude of 1 and points perpendicular to the road in the direction of the right hand side of the road. The d vector can be used to reference lane positions, for instance if you want to be in the middle lane at some way point just add the way points (x,y) with the d vector multiplied by 6 = (2+4), since each lane is 4 m. 
-
-This means add 4 to go to lane 3 and subtract 4 to go to lane 1.
-
 TODO:
 - sampling based polynomial trajectory generation
 

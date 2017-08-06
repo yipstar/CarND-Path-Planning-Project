@@ -62,12 +62,12 @@ void KeepVelocityTrajectory::generate_new_path(Trajectory &trajectory, double s0
   for(int i = 1; i < num_steps - keep_path_amount; i++) {
 
     double t = i * .02;
-    cout << "t: " << t;
+    // cout << "t: " << t;
     // int t = i;
 
     double next_s = jmt[0] + jmt[1] * t + jmt[2] * t*t + jmt[3] * t*t*t + jmt[4] * t*t*t*t + jmt[5] * t*t*t*t*t;
 
-    cout << ", next_s: " << next_s << endl;
+    // cout << ", next_s: " << next_s << endl;
 
     next_s_vals.push_back(next_s);
     next_d_vals.push_back(d);
@@ -80,6 +80,7 @@ void KeepVelocityTrajectory::generate_new_path(Trajectory &trajectory, double s0
 
   // // check trajectory
   // for (int i = 0; i < next_s_vals.size(); i++) {
+
   //   double s1 = next_s_vals[i];
   //   double s1_dot = (s1 - s0) / 0.02;
   //   double s1_double_dot = s1_dot - s0_dot;

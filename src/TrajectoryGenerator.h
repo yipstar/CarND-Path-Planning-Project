@@ -16,5 +16,5 @@ class TrajectoryGenerator {
   Trajectory StartDriving(Map map, CarState carState);
 
   Trajectory StayInLane(Map map, CarState carState);
-  Trajectory StayInLane2(Map map, CarState carState);
+
 };
