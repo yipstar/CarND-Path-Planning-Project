@@ -10,17 +10,39 @@ using namespace std;
 KeepVelocityTrajectory::KeepVelocityTrajectory() {}
 KeepVelocityTrajectory::~KeepVelocityTrajectory() {}
 
-void KeepVelocityTrajectory::generate_new_path(Trajectory &trajectory, double s0, double d, double s0_dot, double s0_double_dot, Map map, int keep_path_amount) {
+Trajectory KeepVelocityTrajectory::generate_new_path(Trajectory trajectory, double s0, double d, double s0_dot, double s0_double_dot, Map map, int keep_path_amount) {
 
-  cout << "keep_path_amount: " << keep_path_amount << endl;
+  auto trajectory_set = generate_trajectory_set(trajectory, s0, d, s0_dot, s0_double_dot, map);
+
+  double lowest_cost = 10000000000000000000000.0;
+  Trajectory best_trajectory;
+
+  for (auto i=0; i < trajectory_set.size(); i++) {
+    auto traj = trajectory_set[i];
+    double cost = calculate_cost(traj);
+
+    if (cost < lowest_cost) {
+      lowest_cost = cost;
+      best_trajectory = traj;
+    }
+  }
+
+  return best_trajectory;
+}
+
+double KeepVelocityTrajectory::calculate_cost(Trajectory trajectory) {
+  return 0.0;
+}
+
+vector<Trajectory> KeepVelocityTrajectory::generate_trajectory_set(Trajectory trajectory, double s0, double d, double s0_dot, double s0_double_dot, Map map) {
+
+  // generate
+  vector<Trajectory> trajectory_set;
 
   auto next_x_vals = trajectory.next_x_vals;
   auto next_y_vals = trajectory.next_y_vals;
-
   auto next_s_vals = trajectory.next_s_vals;
   auto next_d_vals = trajectory.next_d_vals;
-
-  // generate
 
   double sf;
   double sf_dot;
@@ -30,22 +52,11 @@ void KeepVelocityTrajectory::generate_new_path(Trajectory &trajectory, double s0
 
   int num_steps;
 
-  if (keep_path_amount == 0) {
-
-    T = 10;
-    sf_dot = 17.8816; // 40 mph in m/s
-    sf = s0 + sf_dot * 7; // T - 3 timesteps to roughly account for velocity integral
-    sf_double_dot = 0;
-    num_steps = 501;
-
-  } else {
-
-    T = 1;
-    sf_dot = 17.8816; // 40 mph in m/s
-    sf = s0 + sf_dot * T;
-    sf_double_dot = 0;
-    num_steps = 51;
-  }
+  T = 1;
+  sf_dot = 17.8816; // 40 mph in m/s
+  sf = s0 + sf_dot * T;
+  sf_double_dot = 0;
+  num_steps = 51;
 
   vector<double> start;
   vector<double> end;
@@ -60,6 +71,8 @@ void KeepVelocityTrajectory::generate_new_path(Trajectory &trajectory, double s0
   auto jmt = JMT(start, end, T);
 
   // Generate time steps
+
+  int keep_path_amount = 10;
 
   for(int i = 1; i < num_steps - keep_path_amount; i++) {
 
@@ -112,13 +125,18 @@ void KeepVelocityTrajectory::generate_new_path(Trajectory &trajectory, double s0
   //   s0_dot = s1_dot;
   // }
 
-  trajectory.next_x_vals = next_x_vals;
-  trajectory.next_y_vals = next_y_vals;
+  Trajectory new_trajectory;
 
-  trajectory.next_s_vals = next_s_vals;
-  trajectory.next_d_vals = next_d_vals;
+  new_trajectory.next_x_vals = next_x_vals;
+  new_trajectory.next_y_vals = next_y_vals;
+  new_trajectory.next_s_vals = next_s_vals;
+  new_trajectory.next_d_vals = next_d_vals;
 
-  cout << "trajectory.next_x_vals.size: " << next_x_vals.size() << endl;
-  cout << "trajectory.next_s_vals.size: " << next_s_vals.size() << endl;
-  cout << "trajectory.next_d_vals.size: " << next_d_vals.size() << endl;
+  trajectory_set.push_back(new_trajectory);
+
+  // cout << "trajectory.next_x_vals.size: " << next_x_vals.size() << endl;
+  // cout << "trajectory.next_s_vals.size: " << next_s_vals.size() << endl;
+  // cout << "trajectory.next_d_vals.size: " << next_d_vals.size() << endl;
+
+  return trajectory_set;
 }

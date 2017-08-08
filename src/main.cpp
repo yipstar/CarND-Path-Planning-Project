@@ -324,7 +324,7 @@ int main() {
                 cout << "less than 50 points left, generate new trajectory" << endl;
                 TrajectoryGenerator trajectory_generator;
                 Trajectory trajectory;
-                
+
                 if (total_points_traveled == 0) {
                   trajectory = trajectory_generator.get_to_target_speed(map, car_state);
                 } else {
@@ -332,9 +332,6 @@ int main() {
                 }
 
                 previous_trajectory = trajectory;
-
-                auto previous_s_vals = previous_trajectory.next_s_vals;
-
                 path_size = trajectory.next_x_vals.size();
 
                 msgJson["next_x"] = trajectory.next_x_vals;

@@ -10,7 +10,7 @@ using namespace std;
 GetToTargetSpeedTrajectory::GetToTargetSpeedTrajectory() {}
 GetToTargetSpeedTrajectory::~GetToTargetSpeedTrajectory() {}
 
-void GetToTargetSpeedTrajectory::generate_new_path(Trajectory &trajectory, double s0, double d, double s0_dot, double s0_double_dot, Map map, int keep_path_amount) {
+Trajectory GetToTargetSpeedTrajectory::generate_new_path(Trajectory trajectory, double s0, double d, double s0_dot, double s0_double_dot, Map map, int keep_path_amount) {
 
   auto next_x_vals = trajectory.next_x_vals;
   auto next_y_vals = trajectory.next_y_vals;
@@ -67,9 +67,12 @@ void GetToTargetSpeedTrajectory::generate_new_path(Trajectory &trajectory, doubl
     next_y_vals.push_back(xy[1]);
   }
 
-  trajectory.next_x_vals = next_x_vals;
-  trajectory.next_y_vals = next_y_vals;
+  Trajectory new_trajectory;
 
-  trajectory.next_s_vals = next_s_vals;
-  trajectory.next_d_vals = next_d_vals;
+  new_trajectory.next_x_vals = next_x_vals;
+  new_trajectory.next_y_vals = next_y_vals;
+  new_trajectory.next_s_vals = next_s_vals;
+  new_trajectory.next_d_vals = next_d_vals;
+
+  return new_trajectory;
 }
