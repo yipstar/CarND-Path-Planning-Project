@@ -193,7 +193,7 @@ int main() {
 
   string suggested_maneuver;
 
-  int path_size;
+  int path_size = 0;
 
   h.onMessage([&previous_trajectory, &previous_car_state, &prediction, &behavior_planner, &map, &total_points_traveled, &behavior_cycle_counter, &suggested_maneuver, &path_size](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
@@ -255,9 +255,11 @@ int main() {
             // }
             // cout << endl;
 
+            // num_points_traveled * .02 = dt of the cycle
+            int num_points_traveled = 0;
             if (previous_path_x.size() > 0) {
-              int num_points_traveled = path_size - previous_path_x.size();
 
+              num_points_traveled = path_size - previous_path_x.size();
 
               // int trajectory_traveled = previous_trajectory.next_x_vals.size() - previous_path_x.size();
 
@@ -298,7 +300,11 @@ int main() {
 
           	// Sensor Fusion Data, a list of all other cars on the same side of the road.
           	auto sensor_fusion = j[1]["sensor_fusion"];
-            auto predictions = prediction.get_predictions(sensor_fusion);
+            auto predictions = prediction.get_predictions(sensor_fusion, num_points_traveled);
+
+            if (DEBUG) {
+              cout << "sensor fusion: " << sensor_fusion << endl;
+            }
 
           	json msgJson;
 
@@ -308,14 +314,14 @@ int main() {
             if (total_points_traveled == 0 || behavior_cycle_counter >= 250) {
               behavior_cycle_counter = 0;
 
-              suggested_maneuver = behavior_planner.update_state(car_state);
+              suggested_maneuver = behavior_planner.update_state(car_state, predictions);
               cout << "suggested_maneuver: " << suggested_maneuver << endl;
             }
 
 
             // This means Trajectory Generation occurs roughly every .8 seconds
             if (previous_path_x.size() <= 50) {
-                cout << "less than 10 points left, generate new trajectory" << endl;
+                cout << "less than 50 points left, generate new trajectory" << endl;
 
               // TrajectoryGenerator trajectoryGenerator;
               //   auto trajectory = trajectoryGenerator.StayInLane2(map, car_state);

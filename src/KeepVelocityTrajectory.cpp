@@ -20,6 +20,8 @@ void KeepVelocityTrajectory::generate_new_path(Trajectory &trajectory, double s0
   auto next_s_vals = trajectory.next_s_vals;
   auto next_d_vals = trajectory.next_d_vals;
 
+  // generate
+
   double sf;
   double sf_dot;
   double sf_double_dot;
@@ -79,6 +81,23 @@ void KeepVelocityTrajectory::generate_new_path(Trajectory &trajectory, double s0
   }
 
   // // check trajectory
+
+  // Longitudinal Accel checks:
+  // check MAX_BREAKING_ACCEL < s_double_dot < MAX_ACCEL
+  // we use fixed value here, but should probably use information
+  // about the friction of the road in real life
+
+  // Lateral Accel
+  // |d_double_dot| < MAX_LATERAL_ACCEL fixed value for comfort and to prevent roll over
+
+  // Check Max steering angle
+  // tan(curvature) = L / R
+  // L distance of wheel axis and R is circle radius
+
+  // Kmax = tan(steeringMax) / L
+
+  // Check Speed Limit MIN_V < s_dot < MAX_V // speed limit
+
   // for (int i = 0; i < next_s_vals.size(); i++) {
 
   //   double s1 = next_s_vals[i];

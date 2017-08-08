@@ -18,20 +18,20 @@ BehaviorPlanner::BehaviorPlanner(Map map) : map(map) {
 
 BehaviorPlanner::~BehaviorPlanner() {}
 
-string BehaviorPlanner::update_state(CarState car_state) {
+string BehaviorPlanner::update_state(CarState car_state, std::map<int, CarState> predictions) {
 
   if (DEBUG) {
     cout << "current state: " << state << endl;
   }
 
-  state = get_next_state(car_state);
+  state = get_next_state(car_state, predictions);
 
   return state;
 
 }
 
 // Transition function
-string BehaviorPlanner::get_next_state(CarState car_state) {
+string BehaviorPlanner::get_next_state(CarState car_state, std::map<int, CarState> predictions) {
 
   vector<string> possible_successor_states = get_successor_states(car_state);
 

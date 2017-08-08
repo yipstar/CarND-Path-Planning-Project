@@ -19,12 +19,20 @@ struct Trajectory {
 };
 
 struct CarState {
+  int id;
+
   double x;
   double y;
   double s;
   double d;
   double yaw;
   double speed;
+
+  double vx;
+  double vy;
+  double v;
+  double vs;
+  double vd;
 
   vector<double> previous_path_x;
   vector<double> previous_path_y;

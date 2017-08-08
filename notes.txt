@@ -158,3 +158,61 @@ sensor_fusion:
 
 TODO: for jerk
 https://discussions.udacity.com/t/latency-handling/322156/6
+
+
+[
+ [0,923.9572,1124.931,20.58825,0.2107511,139.278,10.02884],
+ [1,1150.794,1180.974,17.98089,1.213317,374.347,9.90862],
+ [2,1080.441,1178.414,17.27473,6.725935,303.3093,2.00729]
+ ,[3,1108.639,1185.321,17.53257,2.339978,332.5406,1.379813],
+
+[4,884.8474,1132.787,21.82869,-0.1260071,100.2547,2.018312],[5,1086.119,1176.089,16.60239,5.430759,308.2582,5.634878],[6,913.4125,1128.832,21.3738,0.1376782,128.7674,6.036598],[7,762.1,1425.2,0,0,6709.296,-270.7039],[8,762.1,1429,0,0,6663.543,-273.1828],[9,762.1,1432.9,0,0,6660.444,-275.5511],[10,762.1,1436.3,0,0,6657.743,-277.6157],[11,762.1,1441.7,0,0,6653.453,-280.8947]]
+
+car: 0, 0, 0, 0, 0, 0, 0, 
+car: 1152.59, 1152.59, 1152.59, 1152.59, 1152.59, 1152.59, 1152.59, 
+car: 1179.07, 1179.07, 1179.07, 1179.07, 1179.07, 1179.07, 1179.07, 
+car: 17.5234, 17.5234, 17.5234, 17.5234, 17.5234, 17.5234, 17.5234, 
+car: -0.106077, -0.106077, -0.106077, -0.106077, -0.106077, -0.106077, -0.106077, 
+car: 309.998, 309.998, 309.998, 309.998, 309.998, 309.998, 309.998, 
+car: 6.04045, 6.04045, 6.04045, 6.04045, 6.04045, 6.04045, 6.04045, 
+car: 2.71557e-33, 2.71557e-33, 2.71557e-33, 2.71557e-33, 2.71557e-33, 2.71557e-33, 2.71557e-33, 
+car: 1.49167e-154, 1.49167e-154, 1.49167e-154, 1.49167e-154, 1.49167e-154, 1.49167e-154, 1.49167e-154, 
+car: 1.49167e-154, 1.49167e-154, 1.49167e-154, 1.49167e-154, 1.49167e-154, 1.49167e-154, 1.49167e-154, 
+car: 5.64235e-38, 5.64235e-38, 5.64235e-38, 5.64235e-38, 5.64235e-38, 5.64235e-38, 5.64235e-38, 
+car: 1.82919e-76, 1.82919e-76, 1.82919e-76, 1.82919e-76, 1.82919e-76, 1.82919e-76, 1.82919e-76,
+
+I have compiled a short summary of things I struggled with so far and I would've benefited of knowing when starting the project. I hope someone who starts the project just now will find it useful:
+
+- read carefully both the `README.md` and the project description - they don't have the same information
+ - `previous_path_x` and `previous_path_y` are always the future `n` steps of your car, i.e. they don't include `x` and `y`
+- your car's `x` and `y` are always one of the points you've sent to the simulator in the previous cycle
+ - some of the other cars don't appear immediately on the road and will have strange coordinates, e.g. `d = -200`
+- the provided coordinate conversion functions are not smooth at all and you need to make your own
+ - you can use `spline` for `Frenet` -> `Cartesian` XY conversion, where you fit `x` and `y` to `s`
+- your conversion will never be completely accurate (expect displacements of 0 to 0.5 per axis, 0.1 on average)
+ - always be careful when handling `s` - remember that the track is a circuit and `s` values around `0` and `6945.554` are fiddly to work with  
+- `Cartesian` XY -> `Frenet` is very inaccurate and complicated to improve, also not very useful
+ - the time between two cycles is ~2-3 steps, i.e. `0.04s-0.06s`
+- it is very useful to always include >3 previous path values to your next values for avoiding crazy behaviour of your car
+ - generate your trajectory from your car's position in a couple of steps from now (maybe 10?)
+ - when getting your car coordinates, don't rely on the provided `s`, `d` or `speed`
+- keep your previous trajectory in `Frenet` and `Cartesian` and use it for calculating `s`, `d`, `s_dot` and `d_dot` from your car's `x` and `y` from the simulator
+ - all cars are roughly ~5m long - use that knowledge for calculating buffer distance (edited)
+
+
+1.  yaw = atan2(vy, vx)
+2.  calculate lane orientation (from closesestWaypoint and next of the car OR by using the spline representation of the track you can just
+find for car_s  X,Y (s) and X,Y (s+delta_s) and find the atan2(DY,DX). Let call that lane orientation
+
+3.  yaw - lane.orientation = *local yaw* (how the car is with reference to the lane)
+4. v = sqrt(vx * vx + vy * vy)
+5 v_s = v * cos(local_yaw)
+6  v_d = v * cos(local_yaw)
+
+and you are done
+
+vector<double> Vehicle::getStateAt(double time) {
+  double new_s = s + v_s * time;
+  double new_d = d + v_d * time;
+  return vector<double>{new_s, new_d, v_s, v_d};
+}

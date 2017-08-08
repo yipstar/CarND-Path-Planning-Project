@@ -2,6 +2,7 @@
 #define Prediction_H
 
 #include <vector>
+#include <map>
 #include "Helpers.h"
 
 #include "Map.h"
@@ -17,7 +18,10 @@ class Prediction {
 
   Map map;
 
-  vector<double> get_predictions(vector<vector<double> > sensor_fusion);
+  std::map<int, CarState> get_predictions(vector<vector<double> > sensor_fusion, int num_points_traveled);
+
+  // store previous cycle state for each car
+  std::map<int, CarState> previous_car_state_map;
 
   const bool DEBUG = true;
 

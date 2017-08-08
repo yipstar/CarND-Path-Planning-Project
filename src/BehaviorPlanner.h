@@ -1,4 +1,5 @@
 #include <vector>
+#include <map>
 
 #include "Helpers.h"
 #include "Map.h"
@@ -20,8 +21,9 @@ class BehaviorPlanner {
 
   const vector<string> STATES = {"KeepLane", "LaneChangeLeft", "LaneChangeRight", "PrepLaneChangeLeft", "PrepLaneChangeRight"};
 
-  string update_state(CarState car_state);
-  string get_next_state(CarState car_state);
+  string update_state(CarState car_state, std::map<int, CarState> predictions);
+
+  string get_next_state(CarState car_state, std::map<int, CarState> predictions);
 
   vector<string> get_successor_states(CarState car_state);
 
