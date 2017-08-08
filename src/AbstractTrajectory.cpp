@@ -10,7 +10,7 @@ using namespace std;
 AbstractTrajectory::AbstractTrajectory() {}
 AbstractTrajectory::~AbstractTrajectory() {}
 
-Trajectory AbstractTrajectory::Generate(Map map, CarState car_state) {
+Trajectory AbstractTrajectory::generate(Map map, CarState car_state) {
 
   Trajectory trajectory;
 

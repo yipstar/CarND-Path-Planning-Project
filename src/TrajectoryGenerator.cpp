@@ -4,11 +4,23 @@
 #include "spline.h"
 
 #include "TrajectoryGenerator.h"
+#include "GetToTargetSpeedTrajectory.h"
+#include "KeepVelocityTrajectory.h"
 
 using namespace std;
 
 TrajectoryGenerator::TrajectoryGenerator() {}
 TrajectoryGenerator::~TrajectoryGenerator() {}
+
+Trajectory TrajectoryGenerator::get_to_target_speed(Map map, CarState car_state) {
+  GetToTargetSpeedTrajectory generator;
+  return generator.generate(map, car_state);
+}
+
+Trajectory TrajectoryGenerator::keep_velocity(Map map, CarState car_state) {
+  KeepVelocityTrajectory generator;
+  return generator.generate(map, car_state);
+}
 
 // // forward declare internal functions
 Trajectory DriveStraight(CarState carState);

@@ -1,0 +1,23 @@
+Lane Following process models
+1. Linear point model, too simplistic
+2. Non-Linear point model (constant acceleration with curvature)
+3. Kinematic bicycle model with controller (PID controller on distance and angle)
+
+Use 3
+
+W is uncertainty. Use a multivariat guassian with 0 mean.
+
+4 Dynamic bicycle model with controller (PID on distance and angle)
+not worth computation overhead, uncertainty is bigger influence than accuracy.
+
+Use AMM
+Autonomous Multiple Model Algorithm
+
+normalizer would be 2 since we are only considering 2 manueuvers
+
+// Behaviors Stay Same, Speed Up, Slow Down, Change Lane.
+    // model these behaviors in the following way
+    // Stay Same: Follow lane A with constant velocity
+    // Speed Up: Follow lane A with positive acceleration
+    // Slow Down: Follow lane A with negative acceleration
+    // Change Lane: Follow lane B with constant velocity

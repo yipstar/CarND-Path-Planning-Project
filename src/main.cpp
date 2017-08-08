@@ -322,24 +322,23 @@ int main() {
             // This means Trajectory Generation occurs roughly every .8 seconds
             if (previous_path_x.size() <= 50) {
                 cout << "less than 50 points left, generate new trajectory" << endl;
+                TrajectoryGenerator trajectory_generator;
+                Trajectory trajectory;
+                
+                if (total_points_traveled == 0) {
+                  trajectory = trajectory_generator.get_to_target_speed(map, car_state);
+                } else {
+                  trajectory = trajectory_generator.keep_velocity(map, car_state);
+                }
 
-              // TrajectoryGenerator trajectoryGenerator;
-              //   auto trajectory = trajectoryGenerator.StayInLane2(map, car_state);
-              // ConstantVelocityTrajectory generator;
-              KeepVelocityTrajectory generator;
+                previous_trajectory = trajectory;
 
-              cout << "generating new trajectory" << endl;
+                auto previous_s_vals = previous_trajectory.next_s_vals;
 
-              auto trajectory = generator.Generate(map, car_state);
+                path_size = trajectory.next_x_vals.size();
 
-              previous_trajectory = trajectory;
-
-              auto previous_s_vals = previous_trajectory.next_s_vals;
-
-              path_size = trajectory.next_x_vals.size();
-
-              msgJson["next_x"] = trajectory.next_x_vals;
-              msgJson["next_y"] = trajectory.next_y_vals;
+                msgJson["next_x"] = trajectory.next_x_vals;
+                msgJson["next_y"] = trajectory.next_y_vals;
 
             } else {
               cout << "use previous path" << endl;

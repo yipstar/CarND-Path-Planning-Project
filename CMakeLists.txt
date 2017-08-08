@@ -16,6 +16,7 @@ set(sources
   src/BehaviorPlanner.cpp
   src/TrajectoryGenerator.cpp
   src/AbstractTrajectory.cpp
+  src/GetToTargetSpeedTrajectory.cpp
   src/KeepVelocityTrajectory.cpp
   src/ConstantVelocityTrajectory.cpp
   )
