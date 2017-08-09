@@ -12,13 +12,13 @@ class KeepVelocityTrajectory : public AbstractTrajectory {
 
   virtual ~KeepVelocityTrajectory();
 
-  virtual Trajectory generate_new_path(Trajectory trajectory, double s, double d, double s_dot, double s_double_dot, Map map, int keep_path_amount, vector<CarState> predictions);
+  virtual Trajectory generate_new_path(Map map, CarState car_state, vector<CarState> predictions);
 
-  vector<Trajectory> generate_trajectory_set(Trajectory trajectory, double s0, double d, double s0_dot, double s0_double_dot, Map map);
+  vector<Trajectory> generate_trajectory_set(Map map, CarState car_state);
 
   vector<Trajectory> filter_trajectory_set(vector<Trajectory> trajectory_set, vector<CarState> predictions);
 
-  Trajectory make_trajectory(Trajectory trajectory, double s0, double d, double s0_dot, double s0_double_dot, Map map, int T, double sf, double sf_dot, double sf_double_dot);
+  Trajectory make_trajectory(Map map, CarState car_state, int T, double sf, double sf_dot, double sf_double_dot);
 
   double calculate_cost(Trajectory);
 

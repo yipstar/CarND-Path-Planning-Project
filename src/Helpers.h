@@ -59,6 +59,19 @@ struct CarState {
     cout << "vs: " << vs << endl;
     cout << "vd: " << vd << endl;
   }
+
+  int num_points_traveled() {
+    int previous_path_size = previous_path_x.size();
+    return previous_trajectory.next_x_vals.size() - previous_path_size;
+  }
+
+  void book_keeping() {
+    int previous_path_size = previous_path_x.size();
+    int num_points_traveled = previous_trajectory.next_x_vals.size() - previous_path_size;
+
+
+
+  }
 };
 
 struct CostMap {

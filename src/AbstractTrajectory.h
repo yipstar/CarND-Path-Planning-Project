@@ -19,7 +19,9 @@ class AbstractTrajectory {
 
   Trajectory generate(Map map, CarState car_state, vector<CarState> predictions);
 
-  virtual Trajectory generate_new_path(Trajectory trajectory, double s, double d, double s_dot, double s_double_dot, Map map, int keep_path_amount, vector<CarState> predictions);
+  virtual Trajectory generate_new_path(Map map, CarState car_state, vector<CarState> predictions);
+
+  Trajectory trajectory_from_previous(CarState car_state);
 
 };
 

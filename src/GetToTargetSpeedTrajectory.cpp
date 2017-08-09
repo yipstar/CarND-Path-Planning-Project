@@ -10,29 +10,24 @@ using namespace std;
 GetToTargetSpeedTrajectory::GetToTargetSpeedTrajectory() {}
 GetToTargetSpeedTrajectory::~GetToTargetSpeedTrajectory() {}
 
-Trajectory GetToTargetSpeedTrajectory::generate_new_path(Trajectory trajectory, double s0, double d, double s0_dot, double s0_double_dot, Map map, int keep_path_amount, vector<CarState> predictions) {
+Trajectory GetToTargetSpeedTrajectory::generate_new_path(Map map, CarState car_state, vector<CarState> predictions) {
 
-  auto next_x_vals = trajectory.next_x_vals;
-  auto next_y_vals = trajectory.next_y_vals;
+  vector<double> next_x_vals;
+  vector<double> next_y_vals;
+  vector<double> next_s_vals;
+  vector<double> next_d_vals;
+ 
+  double s0 = car_state.s;
+  double s0_dot = 0;
+  double s0_double_dot = 0;
 
-  auto next_s_vals = trajectory.next_s_vals;
-  auto next_d_vals = trajectory.next_d_vals;
+  double d = car_state.d;
 
-  // generate
-
-  double sf;
-  double sf_dot;
-  double sf_double_dot;
-
-  int T;
-
-  int num_steps;
-
-  T = 10;
-  sf_dot = 17.8816; // 40 mph in m/s
-  sf = s0 + sf_dot * 7; // T - 3 timesteps to roughly account for velocity integral
-  sf_double_dot = 0;
-  num_steps = 501;
+  int T = 10;
+  double sf_dot = 17.8816; // 40 mph in m/s
+  double sf = s0 + sf_dot * 7; // T - 3 timesteps to roughly account for velocity integral
+  double sf_double_dot = 0;
+  int num_steps = 501;
 
   vector<double> start;
   vector<double> end;
@@ -48,7 +43,7 @@ Trajectory GetToTargetSpeedTrajectory::generate_new_path(Trajectory trajectory, 
 
   // Generate time steps
 
-  for(int i = 1; i < num_steps - keep_path_amount; i++) {
+  for(int i = 1; i < num_steps; i++) {
 
     double t = i * .02;
     // cout << "t: " << t;

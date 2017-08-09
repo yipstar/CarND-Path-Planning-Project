@@ -216,3 +216,24 @@ vector<double> Vehicle::getStateAt(double time) {
   double new_d = d + v_d * time;
   return vector<double>{new_s, new_d, v_s, v_d};
 }
+
+
+-MAX_A < J*DT < MAX_A
+then after getting this bounds , I did the same with velocity
+
+V_Target = V0 + A0*DT + 0.5*J*DT^2. . Solved for J and applied bounds.
+Then S = S0 + V0DT + 0.5*A0DT^2 + 1/6 JDT^3
+
+The first one is simple bounds.. In case your duration is more than 1 sec..
+Its says  J < ABS(10*DT)
+
+
+[5:27] 
+that is easy... Then you want to reach velocity V_target... 20, 30... .. MAX....
+You know your V0 (the one at start of the goal)... you know your acceleration... so solve for J
+
+
+[5:27] 
+Is J within limits? if no... get the max J allowed (or min if its negative)
+
+so now you know a legal J... and you calculate how far you go.... Applyting to S

@@ -35,8 +35,6 @@ string BehaviorPlanner::get_next_state(CarState car_state, vector<CarState> pred
 
   vector<string> possible_successor_states = get_successor_states(car_state);
 
-  double cost = 0.0;
-
   vector<CostMap> costs;
 
   for (auto i = 0; i < possible_successor_states.size(); i++) {
