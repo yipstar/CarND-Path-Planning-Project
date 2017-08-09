@@ -6,9 +6,9 @@ Prediction::Prediction(Map map) : map(map) {
 
 Prediction::~Prediction() {}
 
-std::map<int, CarState> Prediction::get_predictions(vector<vector<double> > sensor_fusion, int num_points_traveled) {
+vector<CarState> Prediction::get_predictions(vector<vector<double> > sensor_fusion, int num_points_traveled) {
 
-  vector<double> predictions;
+  vector<CarState> predictions;
 
   for (auto i=0; i < sensor_fusion.size(); i++) {
 
@@ -42,22 +42,47 @@ std::map<int, CarState> Prediction::get_predictions(vector<vector<double> > sens
 
     auto previous_car_state = previous_car_state_map[id];
 
-    double vs = (s - previous_car_state.s) / num_points_traveled * 0.02;
-    car_state.vd = vs;
+    double vs = (s - previous_car_state.s) / (num_points_traveled * 0.02);
+    car_state.vs = vs;
 
-    double vd = (s - previous_car_state.s) / num_points_traveled * 0.02;
+    double vd = (d - previous_car_state.d) / (num_points_traveled * 0.02);
     car_state.vd = vd;
 
     previous_car_state_map[id] = car_state;
 
     if (DEBUG) {
-      cout << "car id, x, y, vx, vy, s, d, v, yaw, vs, vd: ";
-      cout << car_state.id << ", " << car_state.x << ", " << car_state.y << ", " << car_state.vx << ", " << car_state.vy << ", " << car_state.s << ", " << car_state.d << ", " << car_state.v << ", " << car_state.yaw << ", " << car_state.vs << ", " << car_state.vd << endl;
-    }
+      car_state.debug();
 
+      cout << "current s: " << s << ", previous s: " << previous_car_state.s << endl;
+    }
 
     // For each car predict Follow lane with constant velocity
 
+    vector<double> next_s_vals;
+    vector<double> next_d_vals;
+
+    // 5 second prediction horizon
+    int num_steps = 50;
+    // cout << "num_points_traveled: " << num_points_traveled << endl;
+
+    for (auto i=0; i < num_steps; i++) {
+      auto next_s = s + ((vs / num_steps) * i);
+      // cout << "next_s: " << next_s << endl;
+
+      auto next_d = d + ((vd / num_steps) * i);
+      // cout << "next_d: " << next_d << endl;
+
+      next_s_vals.push_back(next_s);
+      next_d_vals.push_back(next_d);
+    }
+
+    Trajectory predicted_trajectory;
+    predicted_trajectory.next_s_vals = next_s_vals;
+    predicted_trajectory.next_d_vals = next_d_vals;
+
+    car_state.predicted_trajectory = predicted_trajectory;
+
+    predictions.push_back(car_state);
 
     // Make 10 - 20 second predictions of where each car will be
     // Should this time horizon match the Behavior horizon?
@@ -82,6 +107,5 @@ std::map<int, CarState> Prediction::get_predictions(vector<vector<double> > sens
 
   }
 
-  return previous_car_state_map;
-
+  return predictions;
 }

@@ -10,7 +10,7 @@ using namespace std;
 GetToTargetSpeedTrajectory::GetToTargetSpeedTrajectory() {}
 GetToTargetSpeedTrajectory::~GetToTargetSpeedTrajectory() {}
 
-Trajectory GetToTargetSpeedTrajectory::generate_new_path(Trajectory trajectory, double s0, double d, double s0_dot, double s0_double_dot, Map map, int keep_path_amount) {
+Trajectory GetToTargetSpeedTrajectory::generate_new_path(Trajectory trajectory, double s0, double d, double s0_dot, double s0_double_dot, Map map, int keep_path_amount, vector<CarState> predictions) {
 
   auto next_x_vals = trajectory.next_x_vals;
   auto next_y_vals = trajectory.next_y_vals;

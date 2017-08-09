@@ -21,7 +21,7 @@
 
 using namespace std;
 
-const bool DEBUG = true;
+const bool DEBUG = false;
 
 // for convenience
 using json = nlohmann::json;
@@ -303,7 +303,7 @@ int main() {
             auto predictions = prediction.get_predictions(sensor_fusion, num_points_traveled);
 
             if (DEBUG) {
-              cout << "sensor fusion: " << sensor_fusion << endl;
+              // cout << "sensor fusion: " << sensor_fusion << endl;
             }
 
           	json msgJson;
@@ -321,14 +321,14 @@ int main() {
 
             // This means Trajectory Generation occurs roughly every .8 seconds
             if (previous_path_x.size() <= 50) {
-                cout << "less than 50 points left, generate new trajectory" << endl;
+                // cout << "less than 50 points left, generate new trajectory" << endl;
                 TrajectoryGenerator trajectory_generator;
                 Trajectory trajectory;
 
                 if (total_points_traveled == 0) {
-                  trajectory = trajectory_generator.get_to_target_speed(map, car_state);
+                  trajectory = trajectory_generator.get_to_target_speed(map, car_state, predictions);
                 } else {
-                  trajectory = trajectory_generator.keep_velocity(map, car_state);
+                  trajectory = trajectory_generator.keep_velocity(map, car_state, predictions);
                 }
 
                 previous_trajectory = trajectory;

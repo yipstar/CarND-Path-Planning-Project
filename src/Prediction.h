@@ -18,12 +18,12 @@ class Prediction {
 
   Map map;
 
-  std::map<int, CarState> get_predictions(vector<vector<double> > sensor_fusion, int num_points_traveled);
+  vector<CarState> get_predictions(vector<vector<double> > sensor_fusion, int num_points_traveled);
 
   // store previous cycle state for each car
   std::map<int, CarState> previous_car_state_map;
 
-  const bool DEBUG = true;
+  const bool DEBUG = false;
 
 };
 

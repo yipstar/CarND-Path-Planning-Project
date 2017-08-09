@@ -17,8 +17,8 @@ class TrajectoryGenerator {
 
   Trajectory StayInLane(Map map, CarState carState);
 
-  Trajectory get_to_target_speed(Map map, CarState car_state);
+  Trajectory get_to_target_speed(Map map, CarState car_state, vector<CarState> predictions);
 
-  Trajectory keep_velocity(Map map, CarState car_state);
+  Trajectory keep_velocity(Map map, CarState car_state, vector<CarState> predictions);
 
 };

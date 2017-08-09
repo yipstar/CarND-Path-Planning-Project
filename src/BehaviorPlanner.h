@@ -21,9 +21,9 @@ class BehaviorPlanner {
 
   const vector<string> STATES = {"KeepLane", "LaneChangeLeft", "LaneChangeRight", "PrepLaneChangeLeft", "PrepLaneChangeRight"};
 
-  string update_state(CarState car_state, std::map<int, CarState> predictions);
+  string update_state(CarState car_state, vector<CarState> predictions);
 
-  string get_next_state(CarState car_state, std::map<int, CarState> predictions);
+  string get_next_state(CarState car_state, vector<CarState> predictions);
 
   vector<string> get_successor_states(CarState car_state);
 

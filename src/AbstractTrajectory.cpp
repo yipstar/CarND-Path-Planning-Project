@@ -10,7 +10,7 @@ using namespace std;
 AbstractTrajectory::AbstractTrajectory() {}
 AbstractTrajectory::~AbstractTrajectory() {}
 
-Trajectory AbstractTrajectory::generate(Map map, CarState car_state) {
+Trajectory AbstractTrajectory::generate(Map map, CarState car_state, vector<CarState> predictions) {
 
   Trajectory trajectory;
 
@@ -124,11 +124,11 @@ Trajectory AbstractTrajectory::generate(Map map, CarState car_state) {
   trajectory.next_s_vals = next_s_vals;
   trajectory.next_d_vals = next_d_vals;
 
-  auto new_trajectory = generate_new_path(trajectory, s, d, s_dot, s_double_dot, map, keep_path_amount);
+  auto new_trajectory = generate_new_path(trajectory, s, d, s_dot, s_double_dot, map, keep_path_amount, predictions);
 
   return new_trajectory;
 }
 
-Trajectory AbstractTrajectory::generate_new_path(Trajectory trajectory, double s, double d, double s_dot, double s_double_dot, Map map, int keep_path_amount) {
+Trajectory AbstractTrajectory::generate_new_path(Trajectory trajectory, double s, double d, double s_dot, double s_double_dot, Map map, int keep_path_amount, vector<CarState> predictions) {
   // noop
 }

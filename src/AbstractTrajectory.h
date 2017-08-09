@@ -17,9 +17,9 @@ class AbstractTrajectory {
 
   const bool DEBUG = false;
 
-  Trajectory generate(Map map, CarState car_state);
+  Trajectory generate(Map map, CarState car_state, vector<CarState> predictions);
 
-  virtual Trajectory generate_new_path(Trajectory trajectory, double s, double d, double s_dot, double s_double_dot, Map map, int keep_path_amount);
+  virtual Trajectory generate_new_path(Trajectory trajectory, double s, double d, double s_dot, double s_double_dot, Map map, int keep_path_amount, vector<CarState> predictions);
 
 };
 

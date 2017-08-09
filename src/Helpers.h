@@ -43,6 +43,22 @@ struct CarState {
 
   int previous_points_traveled = 0;
   int total_points_traveled = 0;
+
+  Trajectory predicted_trajectory;
+
+  void debug() {
+    cout << "--- Car " << id << endl;
+    cout << "x: " << x << endl;
+    cout << "y: " << y << endl;
+    cout << "vx: " << vx << endl;
+    cout << "vy: " << vy << endl;
+    cout << "s: " << s << endl;
+    cout << "d: " << d << endl;
+    cout << "v: " << v << endl;
+    cout << "yaw: " << yaw << endl;
+    cout << "vs: " << vs << endl;
+    cout << "vd: " << vd << endl;
+  }
 };
 
 struct CostMap {

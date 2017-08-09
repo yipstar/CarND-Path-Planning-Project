@@ -18,7 +18,7 @@ BehaviorPlanner::BehaviorPlanner(Map map) : map(map) {
 
 BehaviorPlanner::~BehaviorPlanner() {}
 
-string BehaviorPlanner::update_state(CarState car_state, std::map<int, CarState> predictions) {
+string BehaviorPlanner::update_state(CarState car_state, vector<CarState> predictions) {
 
   if (DEBUG) {
     cout << "current state: " << state << endl;
@@ -31,7 +31,7 @@ string BehaviorPlanner::update_state(CarState car_state, std::map<int, CarState>
 }
 
 // Transition function
-string BehaviorPlanner::get_next_state(CarState car_state, std::map<int, CarState> predictions) {
+string BehaviorPlanner::get_next_state(CarState car_state, vector<CarState> predictions) {
 
   vector<string> possible_successor_states = get_successor_states(car_state);
 
