@@ -1,5 +1,6 @@
 #include <math.h>
 #include <iostream>
+#include <stdlib.h>
 
 #include "spline.h"
 
@@ -18,6 +19,7 @@ Trajectory KeepVelocityTrajectory::generate_new_path(Trajectory trajectory, doub
 
   if (trajectory_set.size() == 0) {
     cout << "-----No Viable Trajectories DIE" << endl;
+    exit(EXIT_FAILURE);
   }
 
   double lowest_cost = 10000000000000000000000.0;
@@ -33,7 +35,17 @@ Trajectory KeepVelocityTrajectory::generate_new_path(Trajectory trajectory, doub
     }
   }
 
-  return best_trajectory;
+  Trajectory trimmed_trajectory;
+  for (auto i=0; i < 50; i++) {
+    trimmed_trajectory.next_s_vals.push_back(best_trajectory.next_s_vals[i]);
+    trimmed_trajectory.next_d_vals.push_back(best_trajectory.next_d_vals[i]);
+    trimmed_trajectory.next_x_vals.push_back(best_trajectory.next_x_vals[i]);
+    trimmed_trajectory.next_y_vals.push_back(best_trajectory.next_y_vals[i]);
+  }
+
+  cout << "============ new trajectory size: " << trimmed_trajectory.next_s_vals.size() << endl;
+
+  return trimmed_trajectory;
 }
 
 // rank remaining trajectories
@@ -55,22 +67,25 @@ vector<Trajectory> KeepVelocityTrajectory::generate_trajectory_set(Trajectory tr
   double sf_double_dot;
   int T;
 
-  T = 1;
-  sf_dot = 17.8816; // 40 mph in m/s
-  sf = s0 + sf_dot * T;
-  sf_double_dot = 0;
-
-  auto new_trajectory = make_trajectory(trajectory, s0, d, s0_dot, s0_double_dot, map, T, sf, sf_dot, sf_double_dot);
-
-  trajectory_set.push_back(new_trajectory);
-
   T = 5;
-  sf_dot = TARGET_SPEED;
-  sf = s0 + (sf_dot * (T));
+  for (auto i=TARGET_SPEED; i > 10; i--) {
 
-  new_trajectory = make_trajectory(trajectory, s0, d, s0_dot, s0_double_dot, map, T, sf, sf_dot, sf_double_dot);
+    sf_dot = i; // 40 mph in m/s
+    sf = s0 + sf_dot * T;
+    sf_double_dot = 0;
 
-  trajectory_set.push_back(new_trajectory);
+    auto new_trajectory = make_trajectory(trajectory, s0, d, s0_dot, s0_double_dot, map, T, sf, sf_dot, sf_double_dot);
+
+    trajectory_set.push_back(new_trajectory);
+  }
+
+  // T = 5;
+  // sf_dot = TARGET_SPEED;
+  // sf = s0 + (sf_dot * (T));
+
+  // new_trajectory = make_trajectory(trajectory, s0, d, s0_dot, s0_double_dot, map, T, sf, sf_dot, sf_double_dot);
+
+  // trajectory_set.push_back(new_trajectory);
 
   return trajectory_set;
 }
@@ -82,8 +97,11 @@ Trajectory KeepVelocityTrajectory::make_trajectory(Trajectory trajectory, double
   auto next_s_vals = trajectory.next_s_vals;
   auto next_d_vals = trajectory.next_d_vals;
 
-  int num_steps;
-  num_steps = 51;
+  int prediction_horizon = 2;
+  int num_steps = (50 * prediction_horizon) + 1;
+  // int num_steps;
+  // int num_steps = 51;
+  // num_steps = 501;
 
   vector<double> start;
   vector<double> end;
@@ -175,6 +193,8 @@ vector<Trajectory> KeepVelocityTrajectory::filter_trajectory_set(vector<Trajecto
     double s0 = -1;
     double s0_dot;
     double s1_dot;
+    double s1_double_dot;
+
     double s1;
     double d1;
 
@@ -190,11 +210,21 @@ vector<Trajectory> KeepVelocityTrajectory::filter_trajectory_set(vector<Trajecto
         s1_dot = (s1 - s0) / 0.02;
 
         // only check accel when j > 1
-        auto s1_double_dot = s1_dot - s0_dot;
+        s1_double_dot = s1_dot - s0_dot;
 
-        if (s1_dot > 26.8224) {
+        if (s1_dot > TARGET_SPEED) {
           cout << "------------- MAX Velocity reached, rejecting at t: " << j << " s1_dot: " << s1_dot << endl;
-          // rejected = true;
+          rejected = true;
+          break;
+        }
+      }
+
+      // check accel
+      if (j > 1) {
+        if (fabs(s1_double_dot) > 10) {
+          cout << "------------- MAX Acceleration reached, rejecting at t: " << j << " s1_double_dot: " << s1_double_dot << endl;
+          rejected = true;
+          break;
         }
       }
 
@@ -214,16 +244,17 @@ vector<Trajectory> KeepVelocityTrajectory::filter_trajectory_set(vector<Trajecto
 
         if ((s_diff > 0 && s_diff < BUFFER_S) && (car_d > 4 && car_d < 8)) {
 
+          cout << "------------ Warning Collision ahead at t: " << j << " diff: " << s_diff << endl;
+          cout << "Collision with Car ID: " << car_state.id << endl;
 
           cout << "car s: " << predicted_trajectory.next_s_vals[j] << " our s: " << s1 << endl;
           cout << "s_diff: " << s_diff << endl;
           cout << "car d: " << predicted_trajectory.next_d_vals[j] << " our d: " << d1 << endl;
 
-
-          cout << "------------ Warning Collision ahead at t: " << j << " diff: " << s_diff << endl;
-          cout << "Collision with Car ID: " << car_state.id << endl;
+          cout << "current car state: " << endl;
           car_state.debug();
           rejected = true;
+          break;
         }
 
       }

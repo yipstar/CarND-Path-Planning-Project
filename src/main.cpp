@@ -21,7 +21,7 @@
 
 using namespace std;
 
-const bool DEBUG = false;
+const bool DEBUG = true;
 
 // for convenience
 using json = nlohmann::json;
@@ -237,6 +237,8 @@ int main() {
             vector<double> previous_path_x = j[1]["previous_path_x"];
             vector<double> previous_path_y = j[1]["previous_path_y"];
 
+            cout << "============ previous_path_x_size: " << previous_path_x.size() << endl;
+
             // cout << "previous_trajectory.next_s_vals: " << endl;
             // for (int i=0; i < previous_trajectory.next_s_vals.size(); i++) {
             //   cout << previous_trajectory.next_s_vals[i] << ", ";
@@ -321,7 +323,7 @@ int main() {
 
             // This means Trajectory Generation occurs roughly every .8 seconds
             if (previous_path_x.size() <= 50) {
-                // cout << "less than 50 points left, generate new trajectory" << endl;
+                cout << "less than 50 points left, generate new trajectory" << endl;
                 TrajectoryGenerator trajectory_generator;
                 Trajectory trajectory;
 
