@@ -19,6 +19,7 @@ set(sources
   src/GetToTargetSpeedTrajectory.cpp
   src/KeepVelocityTrajectory.cpp
   src/ConstantVelocityTrajectory.cpp
+  src/ChangeLaneTrajectory.cpp
   )
 
 include_directories(src/Eigen-3.3)

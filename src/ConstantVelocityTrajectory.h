@@ -1,3 +1,6 @@
+#ifndef ConstantVelocityTrajectory_H
+#define ConstantVelocityTrajectory_H
+
 #include <vector>
 #include "Helpers.h"
 #include "Map.h"
@@ -6,12 +9,14 @@
 
 using namespace std;
 
-class ConstantVelocityTrajectory : public AbstractTrajectory  {
+class ConstantVelocityTrajectory  {
  public:
   ConstantVelocityTrajectory();
 
   virtual ~ConstantVelocityTrajectory();
 
-  virtual void generate_new_path(Trajectory &trajectory, double s, double d, double s_dot, double s_double_dot, Map map, int keep_path_amount);
+  Trajectory make_trajectory(Map map, CarState car_state, int T, double v);
 
 };
+
+#endif 

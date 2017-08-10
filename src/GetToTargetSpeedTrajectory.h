@@ -12,5 +12,5 @@ class GetToTargetSpeedTrajectory : public AbstractTrajectory {
 
   virtual ~GetToTargetSpeedTrajectory();
 
-  virtual Trajectory generate_new_path(Map map, CarState car_state, vector<CarState> predictions);
+  Trajectory generate_new_path(Map map, CarState car_state, vector<CarState> predictions, Maneuver maneuver);
 };

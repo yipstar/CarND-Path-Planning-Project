@@ -237,3 +237,14 @@ You know your V0 (the one at start of the goal)... you know your acceleration...
 Is J within limits? if no... get the max J allowed (or min if its negative)
 
 so now you know a legal J... and you calculate how far you go.... Applyting to S
+
+Kostas Oreopoulos [9:02 AM] 
+Another way to do it, is find the min, max velocity increase per step. This is ofcoure 10*Dt^2 (10 for jerk). And dt = 0.02 (for every step)  = 0.002 m/s per timestep.
+
+So to go from V1 to V2... you need v2-v1/ 0.002 and of course you can easily wrap that in a loop and at each loop generate both v and s... 
+something like:
+```v_step = (v2>target_v)? 0.002 : -0.002
+while (v2 <> target_v){
+v2+= v_step; s += v2*0.02;
+```
+and then you may add some points to make v constant... to complete the N points you want

@@ -11,53 +11,7 @@ using namespace std;
 KeepVelocityTrajectory::KeepVelocityTrajectory() {}
 KeepVelocityTrajectory::~KeepVelocityTrajectory() {}
 
-Trajectory KeepVelocityTrajectory::generate_new_path(Map map, CarState car_state, vector<CarState> predictions) {
-
-  auto trajectory_set = generate_trajectory_set(map, car_state);
-
-  trajectory_set = filter_trajectory_set(trajectory_set, predictions);
-
-  if (trajectory_set.size() == 0) {
-    cout << "-----No Viable Trajectories DIE" << endl;
-    exit(EXIT_FAILURE);
-  }
-
-  double lowest_cost = 10000000000000000000000.0;
-  Trajectory best_trajectory;
-
-  for (auto i=0; i < trajectory_set.size(); i++) {
-    auto traj = trajectory_set[i];
-    double cost = calculate_cost(traj);
-
-    if (cost < lowest_cost) {
-      lowest_cost = cost;
-      best_trajectory = traj;
-    }
-  }
-
-  Trajectory trimmed_trajectory;
-  for (auto i=0; i < 50; i++) {
-    trimmed_trajectory.next_s_vals.push_back(best_trajectory.next_s_vals[i]);
-    trimmed_trajectory.next_d_vals.push_back(best_trajectory.next_d_vals[i]);
-    trimmed_trajectory.next_x_vals.push_back(best_trajectory.next_x_vals[i]);
-    trimmed_trajectory.next_y_vals.push_back(best_trajectory.next_y_vals[i]);
-  }
-
-  cout << "============ new trajectory size: " << trimmed_trajectory.next_s_vals.size() << endl;
-
-  return trimmed_trajectory;
-}
-
-// rank remaining trajectories
-double KeepVelocityTrajectory::calculate_cost(Trajectory trajectory) {
-
-  // increase cost for
-
-
-  return 0.0;
-}
-
-vector<Trajectory> KeepVelocityTrajectory::generate_trajectory_set(Map map, CarState car_state) {
+vector<Trajectory> KeepVelocityTrajectory::generate_trajectory_set(Map map, CarState car_state, Maneuver maneuver) {
 
   // generate
   vector<Trajectory> trajectory_set;
@@ -67,7 +21,7 @@ vector<Trajectory> KeepVelocityTrajectory::generate_trajectory_set(Map map, CarS
   double sf_double_dot;
   int T;
 
-  T = 5;
+  T = 1;
   for (auto i=TARGET_SPEED; i > 10; i--) {
 
     sf_dot = i; // 40 mph in m/s
@@ -129,13 +83,13 @@ Trajectory KeepVelocityTrajectory::make_trajectory(Map map, CarState car_state, 
     // current acceleration
     s0_double_dot = s0_dot - s_m1_dot;
 
-    if (DEBUG) {
-      cout << "s0: " << s0 << endl;
-      cout << "d: " << d << endl;
-      cout << "s0_dot: " << s0_dot << endl;
-      cout << "s_m1_dot: " << s_m1_dot << endl;
-      cout << "s0_double_dot: " << s0_double_dot << endl;
-    }
+    // if (DEBUG) {
+    //   cout << "s0: " << s0 << endl;
+    //   cout << "d: " << d << endl;
+    //   cout << "s0_dot: " << s0_dot << endl;
+    //   cout << "s_m1_dot: " << s_m1_dot << endl;
+    //   cout << "s0_double_dot: " << s0_double_dot << endl;
+    // }
 
   } else {
 
@@ -162,11 +116,11 @@ Trajectory KeepVelocityTrajectory::make_trajectory(Map map, CarState car_state, 
   vector<double> start;
   vector<double> end;
 
-  cout << "start: {" << s0 << ", " << s0_dot << ", " << s0_double_dot << "}" << endl;
+  // cout << "start: {" << s0 << ", " << s0_dot << ", " << s0_double_dot << "}" << endl;
 
-  cout << "end: {" << sf << ", " << sf_dot << ", " << sf_double_dot << "}" << endl;
+  // cout << "end: {" << sf << ", " << sf_dot << ", " << sf_double_dot << "}" << endl;
 
-  cout << "T: " << T << endl;
+  // cout << "T: " << T << endl;
 
   start = {s0, s0_dot, s0_double_dot};
   end = {sf, sf_dot, sf_double_dot};
@@ -221,104 +175,4 @@ Trajectory KeepVelocityTrajectory::make_trajectory(Map map, CarState car_state, 
   // cout << "trajectory.next_d_vals.size: " << next_d_vals.size() << endl;
 
   return trajectory;
-}
-
-vector<Trajectory> KeepVelocityTrajectory::filter_trajectory_set(vector<Trajectory> trajectory_set, vector<CarState> predictions) {
-
-  // discard the following
-  // non driveable trajectories
-  // trajectories that collide with the road boundaries
-  // trajectories that collide with other vehicles
-
-  // return trajectory_set;
-
-  vector<Trajectory> filtered;
-
-  for (auto i=0; i < trajectory_set.size(); i++) {
-
-    auto trajectory = trajectory_set[i];
-    auto next_s_vals = trajectory.next_s_vals;
-    auto next_d_vals = trajectory.next_d_vals;
-
-    double s0;
-    double s0_dot;
-    double s1_dot;
-    double s1_double_dot;
-
-    double s1;
-    double d1;
-
-    bool rejected = false;
-
-    for (int j = 0; j < next_s_vals.size(); j++) {
-
-      s1 = next_s_vals[j];
-      d1 = next_d_vals[j];
-
-      // check velocity
-      // TODO check min velocity?
-      if (j > 0) {
-
-        s1_dot = (s1 - s0) / 0.02;
-
-        if (s1_dot > TARGET_SPEED) {
-          cout << "------------- MAX Velocity reached, rejecting at t: " << j << " s1_dot: " << s1_dot << endl;
-          rejected = true;
-          break;
-        }
-      }
-
-      // check accel
-      if (j > 1) {
-        s1_double_dot = s1_dot - s0_dot;
-
-        if (fabs(s1_double_dot) > 10) {
-          cout << "------------- MAX Acceleration reached, rejecting at t: " << j << " s1_double_dot: " << s1_double_dot << endl;
-          rejected = true;
-          break;
-        }
-      }
-
-      // cout << "checking for collisions..." << endl;
-
-      // check for collisions
-      for (auto k=0; k < predictions.size(); k++) {
-
-        auto car_state = predictions[k];
-        auto predicted_trajectory = car_state.predicted_trajectory;
-
-
-        auto s_diff = predicted_trajectory.next_s_vals[j] - s1;
-
-        auto car_d = predicted_trajectory.next_d_vals[j];
-        auto d_diff = car_d - d1;
-
-        if ((s_diff > 0 && s_diff < BUFFER_S) && (car_d > 4 && car_d < 8)) {
-
-          cout << "------------ Warning Collision ahead, rejecting this path,  at t: " << j << " diff: " << s_diff << endl;
-          cout << "Collision with Car ID: " << car_state.id << endl;
-
-          cout << "car s: " << predicted_trajectory.next_s_vals[j] << " our s: " << s1 << endl;
-          cout << "s_diff: " << s_diff << endl;
-          cout << "car d: " << predicted_trajectory.next_d_vals[j] << " our d: " << d1 << endl;
-
-          cout << "current car state: " << endl;
-          car_state.debug();
-          rejected = true;
-          break;
-        }
-
-      }
-
-      s0 = s1;
-      s0_dot = s1_dot;
-    }
-
-    if (!rejected) {
-      filtered.push_back(trajectory);
-    }
-
-  }
-
-  return filtered;
 }

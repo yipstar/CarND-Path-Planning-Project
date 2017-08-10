@@ -18,6 +18,7 @@
 #include "AbstractTrajectory.h"
 #include "KeepVelocityTrajectory.h"
 #include "ConstantVelocityTrajectory.h"
+#include "ChangeLaneTrajectory.h"
 
 using namespace std;
 
@@ -191,7 +192,7 @@ int main() {
 
   int behavior_cycle_counter = 0;
 
-  string suggested_maneuver;
+  Maneuver suggested_maneuver;
 
   int path_size = 0;
 
@@ -237,25 +238,7 @@ int main() {
             vector<double> previous_path_x = j[1]["previous_path_x"];
             vector<double> previous_path_y = j[1]["previous_path_y"];
 
-            cout << "============ previous_path_x_size: " << previous_path_x.size() << endl;
-
-            // cout << "previous_trajectory.next_s_vals: " << endl;
-            // for (int i=0; i < previous_trajectory.next_s_vals.size(); i++) {
-            //   cout << previous_trajectory.next_s_vals[i] << ", ";
-            // }
-            // cout << endl;
-
-            // cout << "previous_trajectory.next_x_vals: " << endl;
-            // for (int i=0; i < previous_trajectory.next_x_vals.size(); i++) {
-            //   cout << previous_trajectory.next_x_vals[i] << ", ";
-            // }
-            // cout << endl;
-
-            // cout << "previous_path_x: " << endl;
-            // for (int i=0; i < previous_path_x.size(); i++) {
-            //   cout << previous_path_x[i] << ", ";
-            // }
-            // cout << endl;
+            // cout << "============ previous_path_x_size: " << previous_path_x.size() << endl;
 
             // num_points_traveled * .02 = dt of the cycle
             int num_points_traveled = 0;
@@ -263,32 +246,13 @@ int main() {
 
               num_points_traveled = path_size - previous_path_x.size();
 
-              // int trajectory_traveled = previous_trajectory.next_x_vals.size() - previous_path_x.size();
-
-              // cout << "trajectory_traveled: " << trajectory_traveled << endl;
-
-              // int points_traveled = trajectory_traveled - previous_car_state.previous_points_traveled;
-
-              // cout << "points_traveled: " << points_traveled << endl;
-
-              // cout << "points_traveled_x: ";
-              // for (int i=0; i < points_traveled; i++) {
-              //   int index = trajectory_traveled - points_traveled + i;
-              //   cout << previous_trajectory.next_x_vals[index] << ", ";
-              // }
-              // cout << endl;
-
-              // car_state.previous_points_traveled = points_traveled;
-
-              // cout << "car_state.previous_points_traveled: " << car_state.previous_points_traveled << endl;
-
               total_points_traveled += num_points_traveled;
               behavior_cycle_counter += num_points_traveled;
 
               if (DEBUG) {
-                cout << "num_points_traveled: " << num_points_traveled << endl;
-                cout << "total_points_traveled: " << total_points_traveled << endl;
-                cout << "behavior_cycle_counter: " << total_points_traveled << endl;
+                // cout << "num_points_traveled: " << num_points_traveled << endl;
+                // cout << "total_points_traveled: " << total_points_traveled << endl;
+                // cout << "behavior_cycle_counter: " << total_points_traveled << endl;
               }
             }
 
@@ -314,24 +278,33 @@ int main() {
             debug_cycle(car_state, previous_car_state);
 
             // Run behavior every 5 seconds, roughly 250 points
-            if (total_points_traveled == 0 || behavior_cycle_counter >= 250) {
+            if (behavior_cycle_counter >= 250) {
               behavior_cycle_counter = 0;
 
               suggested_maneuver = behavior_planner.update_state(car_state, predictions);
-              cout << "suggested_maneuver: " << suggested_maneuver << endl;
-            }
 
+              cout << "===== suggested_maneuver: " << suggested_maneuver.state << " target_lane_id: " << suggested_maneuver.target_lane_id << endl;
+            }
 
             // This means Trajectory Generation occurs roughly every .8 seconds
             if (previous_path_x.size() <= 50) {
-                cout << "less than 50 points left, generate new trajectory" << endl;
+                // cout << "less than 50 points left, generate new trajectory" << endl;
                 TrajectoryGenerator trajectory_generator;
                 Trajectory trajectory;
 
                 if (total_points_traveled == 0) {
-                  trajectory = trajectory_generator.get_to_target_speed(map, car_state, predictions);
+                  trajectory = trajectory_generator.get_to_target_speed(map, car_state, predictions, suggested_maneuver);
                 } else {
-                  trajectory = trajectory_generator.keep_velocity(map, car_state, predictions);
+
+                  if ((suggested_maneuver.state == "LaneChangeLeft" || suggested_maneuver.state == "LaneChangeRight") && car_state.current_lane_id() != suggested_maneuver.target_lane_id) {
+                    ChangeLaneTrajectory generator;
+                    trajectory = generator.generate(map, car_state, predictions, suggested_maneuver);
+                  } else {
+                    // cout << "======KeepVelocityTrajectory" << endl;
+                    KeepVelocityTrajectory generator;
+                    trajectory = generator.generate(map, car_state, predictions, suggested_maneuver);
+                  }
+
                 }
 
                 previous_trajectory = trajectory;
@@ -341,7 +314,7 @@ int main() {
                 msgJson["next_y"] = trajectory.next_y_vals;
 
             } else {
-              cout << "use previous path" << endl;
+              // cout << "use previous path" << endl;
 
               path_size = previous_path_x.size();
 

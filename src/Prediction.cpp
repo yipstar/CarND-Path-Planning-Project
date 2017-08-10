@@ -61,7 +61,7 @@ vector<CarState> Prediction::get_predictions(vector<vector<double> > sensor_fusi
     vector<double> next_s_vals;
     vector<double> next_d_vals;
 
-    // 5 second prediction horizon
+    // 10 second prediction horizon
     int prediction_horizon = 5;
     int num_steps = (50 * prediction_horizon) + 1;
     // cout << "num_points_traveled: " << num_points_traveled << endl;

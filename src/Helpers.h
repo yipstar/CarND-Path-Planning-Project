@@ -18,6 +18,14 @@ struct Trajectory {
   vector<double> next_d_vals;
 };
 
+struct Maneuver {
+  int target_lane_id;
+  int target_leading_vehicle_id;
+  double target_speed;
+  int seconds_to_reach_target;
+  string state;
+};
+
 struct CarState {
   int id;
 
@@ -68,9 +76,43 @@ struct CarState {
   void book_keeping() {
     int previous_path_size = previous_path_x.size();
     int num_points_traveled = previous_trajectory.next_x_vals.size() - previous_path_size;
+  }
 
+  int current_lane_id() {
+    if (d > 0 && d < 4) {
+      return 0;
+    } else if (d > 4 && d < 8) {
+      return 1;
+    } else if (d > 8 && d < 12) {
+      return 2;
+    } else {
+      return -1; // should never happend
+    }
+  }
 
+  double calc_current_vs() {
+    auto previous_s_vals = previous_trajectory.next_s_vals;
+    auto previous_d_vals = previous_trajectory.next_d_vals;
 
+    int keep_path_amount = 10;
+    int start_index = keep_path_amount - 1 + num_points_traveled();
+
+    auto s0 = previous_s_vals[start_index];
+    auto d = previous_d_vals[start_index];
+
+    double s_m1 = previous_s_vals[start_index - 1];
+    double s_m2 = previous_s_vals[start_index - 2];
+
+    // current velocity
+    double s0_dot = (s0 - s_m1) / 0.02;
+
+    // previous step velocity
+    double s_m1_dot = (s_m1 - s_m2) / 0.02;
+
+    // current acceleration
+    double s0_double_dot = s0_dot - s_m1_dot;
+
+    return s0_dot;
   }
 };
 

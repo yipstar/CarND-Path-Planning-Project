@@ -12,14 +12,14 @@ using namespace std;
 TrajectoryGenerator::TrajectoryGenerator() {}
 TrajectoryGenerator::~TrajectoryGenerator() {}
 
-Trajectory TrajectoryGenerator::get_to_target_speed(Map map, CarState car_state, vector<CarState> predictions) {
+Trajectory TrajectoryGenerator::get_to_target_speed(Map map, CarState car_state, vector<CarState> predictions, Maneuver maneuver) {
   GetToTargetSpeedTrajectory generator;
-  return generator.generate(map, car_state, predictions);
+  return generator.generate(map, car_state, predictions, maneuver);
 }
 
-Trajectory TrajectoryGenerator::keep_velocity(Map map, CarState car_state, vector<CarState> predictions) {
+Trajectory TrajectoryGenerator::keep_velocity(Map map, CarState car_state, vector<CarState> predictions, Maneuver maneuver) {
   KeepVelocityTrajectory generator;
-  return generator.generate(map, car_state, predictions);
+  return generator.generate(map, car_state, predictions, maneuver);
 }
 
 // // forward declare internal functions

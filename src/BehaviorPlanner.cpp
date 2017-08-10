@@ -2,6 +2,8 @@
 #include <iostream>
 
 #include "BehaviorPlanner.h"
+#include "ConstantVelocityTrajectory.h"
+#include "KeepVelocityTrajectory.h"
 
 using namespace std;
 
@@ -18,15 +20,27 @@ BehaviorPlanner::BehaviorPlanner(Map map) : map(map) {
 
 BehaviorPlanner::~BehaviorPlanner() {}
 
-string BehaviorPlanner::update_state(CarState car_state, vector<CarState> predictions) {
+Maneuver BehaviorPlanner::update_state(CarState car_state, vector<CarState> predictions) {
 
   if (DEBUG) {
     cout << "current state: " << state << endl;
   }
 
+  Maneuver maneuver;
+
   state = get_next_state(car_state, predictions);
 
-  return state;
+  maneuver.state = state;
+
+  if (state == "KeepLane") {
+
+  } else if (state == "LaneChangeLeft") {
+    maneuver.target_lane_id = car_state.current_lane_id() - 1;
+  } else if (state == "LaneChangeRight") {
+    maneuver.target_lane_id = car_state.current_lane_id() + 1;
+  }
+
+  return maneuver;
 
 }
 
@@ -44,9 +58,10 @@ string BehaviorPlanner::get_next_state(CarState car_state, vector<CarState> pred
       cout << "checking successor_state: " << successor_state << endl;
     }
 
-    auto trajectory = trajectory_for_state(successor_state);
+    auto trajectory = trajectory_for_state(successor_state, car_state);
 
-    double cost = calculate_cost(trajectory);
+    double cost = calculate_cost(trajectory, predictions);
+    cout << "cost for state: " << cost << endl;
 
     CostMap cost_map;
     cost_map.state = successor_state;
@@ -57,7 +72,7 @@ string BehaviorPlanner::get_next_state(CarState car_state, vector<CarState> pred
 
   // find state with minimum cost
   string best_state;
-  double lowest_cost = 1000000000000000;
+  double lowest_cost = 1000000000000000000;
 
   for (auto i = 0; i < costs.size(); i++) {
     auto cost_map = costs[i];
@@ -77,13 +92,40 @@ string BehaviorPlanner::get_next_state(CarState car_state, vector<CarState> pred
   return best_state;
 }
 
-Trajectory BehaviorPlanner::trajectory_for_state(string state) {
+Trajectory BehaviorPlanner::trajectory_for_state(string state, CarState car_state) {
+
+  ConstantVelocityTrajectory generator;
   Trajectory trajectory;
+
+  auto vs = car_state.calc_current_vs();
+  cout << "Behavior vs calc: " << vs << endl;
+
+  if (state == "KeepLane") {
+
+    int T = 5;
+    trajectory = generator.make_trajectory(map, car_state, T, vs);
+
+  } else {
+    // noop
+  }
+
   return trajectory;
 }
 
-double BehaviorPlanner::calculate_cost(Trajectory trajectory) {
-  return 0.0;
+double BehaviorPlanner::calculate_cost(Trajectory trajectory, vector<CarState> predictions) {
+
+  double cost = 0;
+
+  KeepVelocityTrajectory generator;
+  auto collides = generator.check_for_collisions(trajectory, predictions);
+  cout << "collides: " << collides << endl;
+
+  if (collides != -1) {
+    cout << "============= Behavior Collision ======= t: " << collides << endl;
+    cost += (1 / collides) * pow(10, 3);
+  }
+
+  return cost;
 }
 
 vector<string> BehaviorPlanner::get_successor_states(CarState car_state) {
