@@ -35,7 +35,6 @@ class AbstractTrajectory {
 
   int KEEP_PATH_AMOUNT = 10;
 
-  // 25 m/s
   const double SPEED_LIMIT = 25.5872;
   const double BUFFER_V = 4;
   const double TARGET_SPEED = SPEED_LIMIT - BUFFER_V;
