@@ -27,16 +27,16 @@ class AbstractTrajectory {
 
   vector<Trajectory> filter_trajectory_set(vector<Trajectory> trajectory_set, vector<CarState> predictions);
 
-  int check_for_collisions(Trajectory trajectory, vector<CarState> predictions);
+  int check_for_collisions(Trajectory trajectory, vector<CarState> predictions, int max_t);
 
-  double calculate_cost(Trajectory trajectory);
+  double calculate_cost(Trajectory trajectory, CarState car_state, vector<CarState> predictions);
 
   virtual Trajectory get_trimmed_trajectory(Trajectory trajectory);
 
   int KEEP_PATH_AMOUNT = 10;
 
   // 25 m/s
-  const double SPEED_LIMIT = 25.0;
+  const double SPEED_LIMIT = 25.5872;
   const double BUFFER_V = 4;
   const double TARGET_SPEED = SPEED_LIMIT - BUFFER_V;
 

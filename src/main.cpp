@@ -224,7 +224,7 @@ int main() {
           	double car_yaw = j[1]["yaw"];
           	double car_speed = j[1]["speed"];
 
-            cout << "DEBUG Loop Start ------" << endl;
+            // cout << "DEBUG Loop Start ------" << endl;
 
             CarState car_state;
             car_state.x = car_x;
@@ -280,6 +280,8 @@ int main() {
             // Run behavior every 5 seconds, roughly 250 points
             if (behavior_cycle_counter >= 250) {
               behavior_cycle_counter = 0;
+
+              cout << "DEBUG Behavior Start Cycle" << endl;
 
               suggested_maneuver = behavior_planner.update_state(car_state, predictions);
 

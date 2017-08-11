@@ -1,4 +1,5 @@
 #include "Map.h"
+#include <cmath>
 
 Map::~Map() {}
 
@@ -18,7 +19,8 @@ Map::Map(vector<double> waypoints_x, vector<double> waypoints_y, vector<double> 
 
 // Use spline of map waypoints to convert FreeNet to {x, y}
 vector<double> Map::getXY_spline(double s, double d) {
-	// s = fmod(s,MAX_S);
+  double MAX_S = 6945.554;
+	s = fmod(s, MAX_S);
 
 	double x = spline_x(s) + d * spline_dx(s);
 	double y = spline_y(s) + d * spline_dy(s);

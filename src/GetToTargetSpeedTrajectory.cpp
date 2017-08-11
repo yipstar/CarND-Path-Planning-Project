@@ -24,7 +24,7 @@ Trajectory GetToTargetSpeedTrajectory::generate_new_path(Map map, CarState car_s
   double d = car_state.d;
 
   int T = 10;
-  double sf_dot = 17.8816; // 40 mph in m/s
+  double sf_dot = 19.8816; // 40 mph in m/s
   double sf = s0 + sf_dot * 7; // T - 3 timesteps to roughly account for velocity integral
   double sf_double_dot = 0;
   int num_steps = 501;

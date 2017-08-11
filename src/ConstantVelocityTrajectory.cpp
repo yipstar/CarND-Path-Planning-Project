@@ -49,8 +49,8 @@ Trajectory ConstantVelocityTrajectory::make_trajectory(Map map, CarState car_sta
   trajectory.next_s_vals = next_s_vals;
   trajectory.next_d_vals = next_d_vals;
 
-  // cout << "trajectory.next_x_vals.size: " << next_x_vals.size() << endl;
-  // cout << "trajectory.next_s_vals.size: " << next_s_vals.size() << endl;
+  cout << "trajectory.next_x_vals.size: " << next_x_vals.size() << endl;
+  cout << "trajectory.next_s_vals.size: " << next_s_vals.size() << endl;
 
   return trajectory;
 }

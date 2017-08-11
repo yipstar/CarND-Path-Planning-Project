@@ -21,7 +21,7 @@ vector<Trajectory> KeepVelocityTrajectory::generate_trajectory_set(Map map, CarS
   double sf_double_dot;
   int T;
 
-  T = 1;
+  T = 2;
   for (auto i=TARGET_SPEED; i > 10; i--) {
 
     sf_dot = i; // 40 mph in m/s

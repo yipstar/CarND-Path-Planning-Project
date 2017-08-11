@@ -87,7 +87,7 @@ Trajectory AbstractTrajectory::generate_new_path(Map map, CarState car_state, ve
 
   if (trajectory_set.size() == 0) {
     cout << "-----No Viable Trajectories DIE" << endl;
-    exit(EXIT_FAILURE);
+    // exit(EXIT_FAILURE);
   }
 
   double lowest_cost = 10000000000000000000000.0;
@@ -95,7 +95,7 @@ Trajectory AbstractTrajectory::generate_new_path(Map map, CarState car_state, ve
 
   for (auto i=0; i < trajectory_set.size(); i++) {
     auto traj = trajectory_set[i];
-    double cost = calculate_cost(traj);
+    double cost = calculate_cost(traj, car_state, predictions);
 
     if (cost < lowest_cost) {
       lowest_cost = cost;
@@ -128,10 +128,35 @@ vector<Trajectory> AbstractTrajectory::generate_trajectory_set(Map map, CarState
 }
 
 // rank remaining trajectories
-double AbstractTrajectory::calculate_cost(Trajectory trajectory) {
+double AbstractTrajectory::calculate_cost(Trajectory trajectory, CarState car_state, vector<CarState> predictions) {
 
-  // increase cost for
-  return 0.0;
+  double cost = 0.0;
+
+  auto ego_lane_id = car_state.current_lane_id();
+  auto ego_next_s_vals = trajectory.next_s_vals;
+
+  // penalize based on distance to car ahead at final trajectory location
+  for (auto p=0; p < predictions.size(); p++) {
+    auto predicted_car_state = predictions[p];
+    auto predicted_car_lane = predicted_car_state.current_lane_id();
+
+    if (predicted_car_state.current_lane_id() == car_state.current_lane_id()) {
+      int end_index = ego_next_s_vals.size() - 1;
+      auto ego_end_s = ego_next_s_vals[end_index];
+      auto predicted_car_s = predicted_car_state.predicted_trajectory.next_s_vals[end_index];
+
+      double s_diff = predicted_car_s - ego_end_s;
+      double s_buffer = 20;
+
+      if (s_diff > 0 && s_diff < s_buffer) {
+        cost += (1/s_diff) * pow(10, 2);
+        cout << "====== penalizing Trajectory with cost: " << cost << endl;
+        return cost;
+      }
+    }
+  }
+
+  return cost;
 }
 
 vector<Trajectory> AbstractTrajectory::filter_trajectory_set(vector<Trajectory> trajectory_set, vector<CarState> predictions) {
@@ -169,9 +194,12 @@ vector<Trajectory> AbstractTrajectory::filter_trajectory_set(vector<Trajectory> 
       d1 = next_d_vals[j];
 
       // check lane boundaries
-      // if (d < 0 || d > 12) {
-        
-      // }
+      if (d1 <= 0.5 || d1 >= 11.5) {
+        cout << "======= Outside Lane boundaries, rejecting, d: " << d1 << endl;
+        rejected = true;
+        break;
+      }
+
 
       // check s velocity
       // TODO check min velocity?
@@ -201,8 +229,9 @@ vector<Trajectory> AbstractTrajectory::filter_trajectory_set(vector<Trajectory> 
       s0_dot = s1_dot;
     }
 
-    int collides = check_for_collisions(trajectory, predictions);
-    cout << "collides: " << collides << endl;
+    int max_t = 50; // only reject collisions that are within one cycle.
+    int collides = check_for_collisions(trajectory, predictions, max_t);
+    // cout << "collides: " << collides << endl;
 
     if (collides != -1) {
       rejected = true;
@@ -217,7 +246,7 @@ vector<Trajectory> AbstractTrajectory::filter_trajectory_set(vector<Trajectory> 
   return filtered;
 }
 
-int AbstractTrajectory::check_for_collisions(Trajectory trajectory, vector<CarState> predictions) {
+int AbstractTrajectory::check_for_collisions(Trajectory trajectory, vector<CarState> predictions, int max_t) {
 
   auto next_s_vals = trajectory.next_s_vals;
   auto next_d_vals = trajectory.next_d_vals;
@@ -228,20 +257,26 @@ int AbstractTrajectory::check_for_collisions(Trajectory trajectory, vector<CarSt
 
     auto car_predicted_trajectory = car_state.predicted_trajectory;
 
-    for (int t = 0; t < next_s_vals.size(); t++) {
+    for (int t = 0; t < max_t; t++) {
 
       auto s = next_s_vals[t];
       auto d = next_d_vals[t];
 
+      double our_left_side = d - 1.5;
+      double our_right_side = d + 1.5;
+
       auto car_s = car_predicted_trajectory.next_s_vals[t];
       auto car_d = car_predicted_trajectory.next_d_vals[t];
+
+      double car_left_side = car_d - 1.5;
+      double car_right_side = car_d + 1.5;
 
       auto s_diff = car_s - s;
       auto d_diff = car_d - d;
 
-      if ((s_diff > 0 && s_diff < BUFFER_S) && (car_d > 4 && car_d < 8)) {
+      if ( (s_diff > 0 && s_diff < 2.0) && ( ((car_left_side >= our_left_side) && (car_left_side <= our_right_side)) || ((car_right_side >= our_left_side) && (car_right_side <= our_right_side)) ) ) {
 
-        cout << "------------ Warning Collision ahead with car" << car_state.id << ", rejecting this path,  at t: " << t << " s_diff: " << s_diff << " d_diff: " << d_diff << endl;
+        cout << "------------ Warning Collision ahead with car" << car_state.id << ", at t: " << t << " s_diff: " << s_diff << " d_diff: " << d_diff << endl;
 
         // cout << "car s: " << car_s << " our s: " << s << endl;
         // cout << "s_diff: " << s_diff << endl;
